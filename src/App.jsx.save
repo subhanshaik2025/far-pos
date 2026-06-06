@@ -17,6 +17,7 @@ export default function POSApp() {
   const [search, setSearch] = useState('');
   const [billCounter, setBillCounter] = useState(1001);
   
+  // Add product form state
   const [showAddProduct, setShowAddProduct] = useState(false);
   const [newProduct, setNewProduct] = useState({ name: '', price: '', stock: '', category: '' });
 
@@ -112,7 +113,7 @@ export default function POSApp() {
           <div style={{ fontSize: 24 }}>{industry?.icon}</div>
           <div>
             <h1 style={{ fontSize: 16, fontWeight: 700, color: '#fff' }}>{currentUser?.shop_name}</h1>
-            <p style={{ fontSize: 10, color: 'rgba(255,255,255,.65)' }}>FAR-POS v2</p>
+            <p style={{ fontSize: 10, color: 'rgba(255,255,255,.65)' }} FAR-POS v2</p>
           </div>
         </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
@@ -299,7 +300,7 @@ export default function POSApp() {
           </div>
         )}
 
-        {/* OTHER TABS */}
+        {/* OTHER TABS (Khata, etc) */}
         {!['billing', 'inventory', 'reports'].includes(tab) && (
           <div>
             <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 16 }}>📋 {tab.toUpperCase()}</h3>

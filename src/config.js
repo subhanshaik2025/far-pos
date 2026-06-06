@@ -1,6 +1,6 @@
 // ==========================================
-// ShopEasy POS v2 — Configuration
-// Industry definitions, translations, defaults
+// FAR-POS - Multi-Industry Point of Sale
+// Configuration file
 // ==========================================
 
 export const INDUSTRIES = {
@@ -103,9 +103,9 @@ export const INDUSTRIES = {
 
 export const TRANSLATIONS = {
   en: {
-    welcome: 'Welcome to ShopEasy POS',
+    welcome: 'Welcome to FAR-POS',
     selectIndustry: 'What type of business are you running?',
-    startUsing: 'Start Using ShopEasy',
+    startUsing: 'Start Using FAR-POS',
     setupShop: 'Setup Your Shop',
     billing: 'Billing',
     inventory: 'Inventory',
@@ -193,9 +193,9 @@ export const TRANSLATIONS = {
     noData: 'No data yet. Start billing!',
   },
   te: {
-    welcome: 'ShopEasy POS కి స్వాగతం',
+    welcome: 'FAR-POS కి స్వాగతం',
     selectIndustry: 'మీరు ఏ రకమైన వ్యాపారం చేస్తున్నారు?',
-    startUsing: 'ShopEasy ఉపయోగించటం ప్రారంభించండి',
+    startUsing: 'FAR-POS ఉపయోగించటం ప్రారంభించండి',
     setupShop: 'మీ దుకాణం సెటప్ చేయండి',
     billing: 'బిల్లింగ్',
     inventory: 'ఇన్వెంటరీ',
