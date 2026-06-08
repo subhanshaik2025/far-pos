@@ -128,6 +128,167 @@ export default function POSApp() {
     return msg;
   };
 
+  const generateGSTInvoice=(bill)=>{
+    const items=(typeof bill.items_json==='string'?JSON.parse(bill.items_json):(bill.items||[]));
+    const cgst=Math.round(Number(bill.gst||0)/2);
+    const sgst=cgst;
+    const numToWords=(n)=>{
+      const a=['','One','Two','Three','Four','Five','Six','Seven','Eight','Nine','Ten','Eleven','Twelve','Thirteen','Fourteen','Fifteen','Sixteen','Seventeen','Eighteen','Nineteen'];
+      const b=['','','Twenty','Thirty','Forty','Fifty','Sixty','Seventy','Eighty','Ninety'];
+      if(n===0)return 'Zero';
+      if(n<20)return a[n];
+      if(n<100)return b[Math.floor(n/10)]+(n%10?' '+a[n%10]:'');
+      if(n<1000)return a[Math.floor(n/100)]+' Hundred'+(n%100?' '+numToWords(n%100):'');
+      if(n<100000)return numToWords(Math.floor(n/1000))+' Thousand'+(n%1000?' '+numToWords(n%1000):'');
+      return numToWords(Math.floor(n/100000))+' Lakh'+(n%100000?' '+numToWords(n%100000):'');
+    };
+    const totalInWords=numToWords(Number(bill.total))+' Rupees Only';
+    const html=`<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>GST Invoice - ${bill.id}</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:Arial,sans-serif;background:#fff;color:#111;font-size:13px;}
+  .page{max-width:700px;margin:0 auto;padding:30px;border:2px solid #111;}
+  .header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;}
+  .logo{font-size:24px;font-weight:700;letter-spacing:3px;color:#C9A84C;}
+  .title{text-align:center;font-size:18px;font-weight:700;letter-spacing:2px;border:1px solid #111;padding:6px;margin-bottom:16px;}
+  .info-grid{display:grid;grid-template-columns:1fr 1fr;gap:0;margin-bottom:16px;border:1px solid #111;}
+  .info-box{padding:10px;border-right:1px solid #111;}
+  .info-box:last-child{border-right:none;}
+  .info-label{font-size:10px;color:#666;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;}
+  .info-value{font-size:13px;font-weight:600;}
+  table{width:100%;border-collapse:collapse;margin-bottom:16px;}
+  th{background:#111;color:#fff;padding:8px;text-align:left;font-size:11px;letter-spacing:1px;text-transform:uppercase;}
+  td{padding:8px;border-bottom:1px solid #eee;font-size:13px;}
+  tr:nth-child(even) td{background:#f9f9f9;}
+  .totals{display:flex;justify-content:flex-end;margin-bottom:16px;}
+  .totals-table{width:260px;border:1px solid #111;}
+  .totals-table td{padding:6px 10px;border-bottom:1px solid #eee;}
+  .totals-table td:last-child{text-align:right;font-weight:600;}
+  .grand td{background:#111;color:#fff;font-weight:700;font-size:14px;}
+  .words-box{background:#f5f5f5;border:1px solid #ddd;padding:10px;margin-bottom:16px;font-size:12px;}
+  .footer{display:flex;justify-content:space-between;margin-top:30px;padding-top:16px;border-top:1px solid #111;}
+  .sign-box{text-align:center;width:200px;}
+  .sign-line{border-top:1px solid #111;margin-top:40px;padding-top:6px;font-size:11px;color:#666;}
+  .stamp{display:inline-block;border:3px solid #C9A84C;color:#C9A84C;font-size:16px;font-weight:700;padding:8px 20px;transform:rotate(-15deg);letter-spacing:3px;}
+  @media print{body{padding:0;}button{display:none;}}
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="header">
+    <div>
+      <div class="logo">FAR — POS</div>
+      <div style="font-size:15px;font-weight:700;margin-top:4px;">${currentUser.shop_name}</div>
+      <div style="font-size:12px;color:#666;">Owner: ${currentUser.owner_name}</div>
+      <div style="font-size:12px;color:#666;">Ph: ${currentUser.phone}</div>
+      <div style="font-size:11px;color:#888;margin-top:4px;">GSTIN: __ __ __ __ __ __ __ __ __ __ __ __ __ __</div>
+    </div>
+    <div style="text-align:right;">
+      <div style="font-size:11px;color:#666;">Invoice No: <strong>${bill.id}</strong></div>
+      <div style="font-size:11px;color:#666;margin-top:4px;">Date: <strong>${bill.date}</strong></div>
+      <div style="font-size:11px;color:#666;margin-top:4px;">Payment: <strong>${(bill.mode||bill.payment_mode||'').toUpperCase()}</strong></div>
+      <div style="margin-top:12px;"><span class="stamp">PAID</span></div>
+    </div>
+  </div>
+
+  <div class="title">TAX INVOICE</div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Item Description</th>
+        <th>HSN</th>
+        <th>Qty</th>
+        <th>Rate</th>
+        <th>Amount</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${items.map((item,i)=>`
+      <tr>
+        <td>${i+1}</td>
+        <td>${item.name}</td>
+        <td>9999</td>
+        <td>${item.qty}</td>
+        <td>Rs. ${Number(item.price).toLocaleString()}</td>
+        <td>Rs. ${(item.price*item.qty).toLocaleString()}</td>
+      </tr>`).join('')}
+    </tbody>
+  </table>
+
+  <div class="totals">
+    <table class="totals-table">
+      <tr><td>Subtotal</td><td>Rs. ${Number(bill.subtotal).toLocaleString()}</td></tr>
+      ${bill.discount>0?`<tr><td>Discount</td><td>- Rs. ${Number(bill.discount).toLocaleString()}</td></tr>`:''}
+      <tr><td>CGST (2.5%)</td><td>Rs. ${cgst.toLocaleString()}</td></tr>
+      <tr><td>SGST (2.5%)</td><td>Rs. ${sgst.toLocaleString()}</td></tr>
+      <tr class="grand"><td>TOTAL</td><td>Rs. ${Number(bill.total).toLocaleString()}</td></tr>
+    </table>
+  </div>
+
+  <div class="words-box">
+    <strong>Amount in Words:</strong> ${totalInWords}
+  </div>
+
+  <div class="footer">
+    <div>
+      <div style="font-size:11px;color:#666;margin-bottom:4px;">Terms & Conditions:</div>
+      <div style="font-size:11px;color:#888;">1. Goods once sold will not be taken back.</div>
+      <div style="font-size:11px;color:#888;">2. Subject to local jurisdiction.</div>
+      <div style="font-size:12px;color:#888;margin-top:8px;">Powered by FAR-POS</div>
+    </div>
+    <div class="sign-box">
+      <div class="sign-line">Authorised Signatory<br>${currentUser.shop_name}</div>
+    </div>
+  </div>
+
+  <div style="text-align:center;margin-top:16px;">
+    <button onclick="window.print()" style="background:#C9A84C;color:#000;border:none;padding:10px 24px;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;margin-right:8px;">Print Invoice</button>
+    <button onclick="window.close()" style="background:#333;color:#fff;border:none;padding:10px 24px;border-radius:8px;font-size:14px;cursor:pointer;">Close</button>
+  </div>
+</div>
+</body>
+</html>`;
+    const blob=new Blob([html],{type:'text/html'});
+    const url=URL.createObjectURL(blob);
+    window.open(url,'_blank');
+  };
+
+  const sendDailySummary=()=>{
+    const today=new Date().toISOString().split('T')[0];
+    const todayBills=bills.filter(b=>{
+      const d=b.timestamp?new Date(b.timestamp).toISOString().split('T')[0]:today;
+      return d===today;
+    });
+    const totalSales=todayBills.reduce((s,b)=>s+Number(b.total),0);
+    const cashTotal=todayBills.filter(b=>(b.mode||b.payment_mode)==='cash').reduce((s,b)=>s+Number(b.total),0);
+    const upiTotal=todayBills.filter(b=>(b.mode||b.payment_mode)==='upi').reduce((s,b)=>s+Number(b.total),0);
+    const gstTotal=todayBills.reduce((s,b)=>s+Number(b.gst||0),0);
+    const topItem=getTopProducts(todayBills)[0];
+    const date=new Date().toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long'});
+    let msg='';
+    msg+='📊 *Daily Sales Summary*\n';
+    msg+='━━━━━━━━━━━━━━━━━━━━\n';
+    msg+='🏪 *'+currentUser.shop_name+'*\n';
+    msg+='📅 '+date+'\n';
+    msg+='━━━━━━━━━━━━━━━━━━━━\n';
+    msg+='💰 *Total Sales: Rs. '+totalSales.toLocaleString()+'*\n';
+    msg+='🧾 Bills: '+todayBills.length+'\n';
+    msg+='💵 Cash: Rs. '+cashTotal.toLocaleString()+'\n';
+    msg+='📱 UPI: Rs. '+upiTotal.toLocaleString()+'\n';
+    msg+='🏛 GST: Rs. '+gstTotal.toLocaleString()+'\n';
+    msg+='📈 Net Profit: Rs. '+(totalSales-gstTotal).toLocaleString()+'\n';
+    if(topItem) msg+='⭐ Top Product: '+topItem.name+' (Rs. '+topItem.revenue.toLocaleString()+')\n';
+    msg+='━━━━━━━━━━━━━━━━━━━━\n';
+    msg+='_Powered by FAR-POS_';
+    window.open('https://wa.me/?text='+encodeURIComponent(msg),'_blank');
+  };
+
   const completeBill=async(mode)=>{
     if(cart.length===0){alert('Cart is empty');return;}
     setLoadingBill(true);
@@ -432,6 +593,7 @@ export default function POSApp() {
           <div>
             <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16}}>
               <p style={{...sT,margin:0}}>Bill History</p>
+              <button onClick={sendDailySummary} style={{...goldBtn(false),fontSize:12,padding:'6px 14px'}}>📊 WhatsApp Summary</button>
               <button onClick={()=>getSalesFromSheet(currentUser.shop_name).then(s=>setBills(s))} style={ghostBtn}>Refresh</button>
             </div>
             <input placeholder='Search by bill ID, amount or date...' value={billSearch} onChange={e=>setBillSearch(e.target.value)} style={{...inp,marginBottom:16}} />
@@ -454,7 +616,10 @@ export default function POSApp() {
                   <div style={{display:'flex',justifyContent:'space-between',fontSize:13,color:MU,marginBottom:4}}><span>GST</span><span>Rs. {showBillDetail.gst||0}</span></div>
                   <div style={{display:'flex',justifyContent:'space-between',fontSize:18,fontWeight:700}}><span>Total</span><span style={{color:GOLD}}>Rs. {showBillDetail.total}</span></div>
                 </div>
-                <button onClick={()=>shareOnWhatsApp(showBillDetail)} style={{...goldBtn(false),width:'100%',marginTop:12,textAlign:'center'}}>Share on WhatsApp</button>
+                <div style={{display:'flex',gap:8,marginTop:12}}>
+                  <button onClick={()=>shareOnWhatsApp(showBillDetail)} style={{...goldBtn(false),flex:1,textAlign:'center'}}>WhatsApp</button>
+                  <button onClick={()=>generateGSTInvoice(showBillDetail)} style={{flex:1,padding:'10px 18px',background:'transparent',color:GOLD,border:'1px solid #333',borderRadius:8,fontSize:13,fontWeight:600,cursor:'pointer'}}>GST Invoice</button>
+                </div>
               </div>
             )}
             {[...bills].reverse().filter(b=>{
