@@ -1,8 +1,51 @@
-export function verifyPhoneNumberFromSheet(phoneNumber) {
-  const allowedUsers = JSON.parse(localStorage.getItem('far-pos-allowed-users') || '[]');
-  const user = allowedUsers.find(u => u.phone === phoneNumber);
-  if (!user) {
-    return { success: false, error: 'Phone not authorized' };
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbygYlpYQz5CR3s0mn0gZrb8jrgkPc7Y8GeL2tmSG7PLgLh1i5BNrB39ezZm-iRNiZEYUQ/exec';
+
+export async function fetchAllowedUsers() {
+  try {
+    const res = await fetch(`${APPS_SCRIPT_URL}?action=getAllowedUsers`);
+    const data = await res.json();
+    if (data.success) {
+      localStorage.setItem('far-pos-allowed-users', JSON.stringify(data.users));
+      return data.users;
+    }
+  } catch (err) {
+    console.error('fetchAllowedUsers error:', err);
   }
+  return JSON.parse(localStorage.getItem('far-pos-allowed-users') || '[]');
+}
+
+export async function verifyPhoneNumberFromSheet(phoneNumber) {
+  const users = await fetchAllowedUsers();
+  const user = users.find(u => String(u.phone).trim() === String(phoneNumber).trim());
+  if (!user) return { success: false, error: 'Phone not authorized' };
   return { success: true, user };
+}
+
+export async function fetchRegisteredUsers() {
+  try {
+    const res = await fetch(`${APPS_SCRIPT_URL}?action=getRegisteredUsers`);
+    const data = await res.json();
+    if (data.success) {
+      localStorage.setItem('pos-users', JSON.stringify(data.users));
+      return data.users;
+    }
+  } catch (err) {
+    console.error('fetchRegisteredUsers error:', err);
+  }
+  return JSON.parse(localStorage.getItem('pos-users') || '[]');
+}
+
+export async function saveRegisteredUser(userData) {
+  try {
+    const res = await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'registerUser', ...userData }),
+    });
+    const data = await res.json();
+    return data;
+  } catch (err) {
+    console.error('saveRegisteredUser error:', err);
+    return { success: false, error: 'Network error' };
+  }
 }

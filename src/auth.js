@@ -1,32 +1,38 @@
 import { generateId } from './utils';
+import { saveRegisteredUser, fetchRegisteredUsers } from './googleSheets';
 
-export function registerUser(shopName, ownerName, phoneNumber, password, industryType) {
+export async function registerUser(shopName, ownerName, phoneNumber, password, industryType) {
   const userId = generateId('user');
   const userData = {
     id: userId,
-    phone: phoneNumber,
+    phone: String(phoneNumber).trim(),
     password: password,
     owner_name: ownerName,
     shop_name: shopName,
     industry_type: industryType,
     status: 'active',
   };
+
+  const result = await saveRegisteredUser(userData);
+  if (!result.success) return result;
+
   const users = JSON.parse(localStorage.getItem('pos-users') || '[]');
-  if (users.find(u => u.phone === phoneNumber)) {
-    return { success: false, error: 'Phone already registered' };
-  }
   users.push(userData);
   localStorage.setItem('pos-users', JSON.stringify(users));
   localStorage.setItem('pos-user-token', userId);
   localStorage.setItem('pos-current-user', JSON.stringify(userData));
+
   return { success: true, userData };
 }
 
-export function loginUser(phoneNumber, password) {
-  const users = JSON.parse(localStorage.getItem('pos-users') || '[]');
-  const user = users.find(u => u.phone === phoneNumber);
+export async function loginUser(phoneNumber, password) {
+  const users = await fetchRegisteredUsers();
+  const phone = String(phoneNumber).trim();
+  const user = users.find(u => String(u.phone).trim() === phone);
+
   if (!user) return { success: false, error: 'Phone not registered' };
-  if (user.password !== password) return { success: false, error: 'Wrong password' };
+  if (String(user.password) !== String(password)) return { success: false, error: 'Wrong password' };
+
   localStorage.setItem('pos-user-token', user.id);
   localStorage.setItem('pos-current-user', JSON.stringify(user));
   return { success: true, user };
@@ -42,6 +48,7 @@ export function isUserLoggedIn() {
 }
 
 export function logoutUser() {
-  localStorage.clear();
+  localStorage.removeItem('pos-user-token');
+  localStorage.removeItem('pos-current-user');
   return { success: true };
 }
