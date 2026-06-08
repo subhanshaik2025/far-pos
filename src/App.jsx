@@ -36,6 +36,8 @@ export default function POSApp() {
   const [newKhata,setNewKhata]=useState({customer:'',phone:'',amount:'',note:''});
   const [newExpense,setNewExpense]=useState({title:'',amount:'',category:'rent'});
   const [showBillDetail,setShowBillDetail]=useState(null);
+  const [shopSettings,setShopSettings]=useState({gstin:'',gstPercent:5,shopAddress:'',shopPhone:''});
+  const [editSettings,setEditSettings]=useState(false);
 
   useEffect(()=>{
     initializeAppData();
@@ -49,7 +51,11 @@ export default function POSApp() {
       if(saved) setProducts(JSON.parse(saved));
       else setProducts(ind.sampleProducts||[]);
       getSalesFromSheet(user.shop_name).then(s=>setBills(s));
-      const k=localStorage.getItem('pos-khata-'+user.id);
+      const st=localStorage.getItem('pos-settings-'+user.id);
+      if(st) setShopSettings(JSON.parse(st));
+      const st=localStorage.getItem('pos-settings-'+user.id);
+    if(st) setShopSettings(JSON.parse(st));
+    const k=localStorage.getItem('pos-khata-'+user.id);
       if(k) setKhata(JSON.parse(k));
       const e=localStorage.getItem('pos-expenses-'+user.id);
       if(e) setExpenses(JSON.parse(e));
@@ -62,6 +68,7 @@ export default function POSApp() {
   };
   const saveKhata=(k)=>{ setKhata(k); localStorage.setItem('pos-khata-'+currentUser.id,JSON.stringify(k)); };
   const saveExpenses=(e)=>{ setExpenses(e); localStorage.setItem('pos-expenses-'+currentUser.id,JSON.stringify(e)); };
+  const saveSettings=(s)=>{ setShopSettings(s); localStorage.setItem('pos-settings-'+currentUser.id,JSON.stringify(s)); };
 
   const handleLoginSuccess=(user)=>{
     setCurrentUser(user);
@@ -85,7 +92,8 @@ export default function POSApp() {
   const subtotal=cart.reduce((s,c)=>s+(c.price*c.qty),0);
   const discountAmt=discountType==='percent'?Math.round(subtotal*discount/100):Math.min(discount,subtotal);
   const afterDiscount=subtotal-discountAmt;
-  const {grandTotal,gst}=calculateTotal(afterDiscount,5);
+  const gstPct=shopSettings.gstPercent||5;
+  const {grandTotal,gst}=calculateTotal(afterDiscount,gstPct);
 
   const addToCart=(p)=>{
     if(p.stock!==undefined && p.stock<=0){ alert('Out of stock'); return; }
@@ -130,6 +138,7 @@ export default function POSApp() {
 
   const generateGSTInvoice=(bill)=>{
     const items=(typeof bill.items_json==='string'?JSON.parse(bill.items_json):(bill.items||[]));
+    const billGstPct=bill.gstPercent||shopSettings.gstPercent||5;
     const cgst=Math.round(Number(bill.gst||0)/2);
     const sgst=cgst;
     const numToWords=(n)=>{
@@ -185,7 +194,8 @@ export default function POSApp() {
       <div style="font-size:15px;font-weight:700;margin-top:4px;">${currentUser.shop_name}</div>
       <div style="font-size:12px;color:#666;">Owner: ${currentUser.owner_name}</div>
       <div style="font-size:12px;color:#666;">Ph: ${currentUser.phone}</div>
-      <div style="font-size:11px;color:#888;margin-top:4px;">GSTIN: __ __ __ __ __ __ __ __ __ __ __ __ __ __</div>
+      <div style="font-size:11px;color:#888;margin-top:4px;">GSTIN: ${shopSettings.gstin||'Not Registered'}</div>
+      ${shopSettings.shopAddress?'<div style="font-size:11px;color:#888;">'+shopSettings.shopAddress+'</div>':''}
     </div>
     <div style="text-align:right;">
       <div style="font-size:11px;color:#666;">Invoice No: <strong>${bill.id}</strong></div>
@@ -225,8 +235,8 @@ export default function POSApp() {
     <table class="totals-table">
       <tr><td>Subtotal</td><td>Rs. ${Number(bill.subtotal).toLocaleString()}</td></tr>
       ${bill.discount>0?`<tr><td>Discount</td><td>- Rs. ${Number(bill.discount).toLocaleString()}</td></tr>`:''}
-      <tr><td>CGST (2.5%)</td><td>Rs. ${cgst.toLocaleString()}</td></tr>
-      <tr><td>SGST (2.5%)</td><td>Rs. ${sgst.toLocaleString()}</td></tr>
+      <tr><td>CGST (${billGstPct/2}%)</td><td>Rs. ${cgst.toLocaleString()}</td></tr>
+      <tr><td>SGST (${billGstPct/2}%)</td><td>Rs. ${sgst.toLocaleString()}</td></tr>
       <tr class="grand"><td>TOTAL</td><td>Rs. ${Number(bill.total).toLocaleString()}</td></tr>
     </table>
   </div>
@@ -295,6 +305,7 @@ export default function POSApp() {
     const bill={
       id:generateId('bill'),items:cart,subtotal:Math.round(subtotal),
       discount:discountAmt,gst:Math.round(gst),total:Math.round(grandTotal),
+      gstPercent:gstPct,
       mode,date:new Date().toLocaleDateString('en-IN'),timestamp:new Date().toISOString(),
     };
     await saveBillToSheet(bill,currentUser);
@@ -385,7 +396,7 @@ export default function POSApp() {
       </div>
 
       <div style={{background:'#141414',display:'flex',gap:4,padding:'10px 20px 0',borderBottom:'1px solid #222',overflowX:'auto'}}>
-        {['billing','products','inventory','khata','history','reports'].map(f=>(
+        {['billing','products','inventory','khata','history','reports','settings'].map(f=>(
           <button key={f} onClick={()=>setTab(f)} style={tabStyle(tab===f)}>{f.charAt(0).toUpperCase()+f.slice(1)}</button>
         ))}
       </div>
@@ -435,7 +446,7 @@ export default function POSApp() {
                   <div style={{borderTop:'1px solid #222',paddingTop:14}}>
                     <div style={{display:'flex',justifyContent:'space-between',marginBottom:5,fontSize:13,color:MU}}><span>Subtotal</span><span style={{color:TX}}>Rs. {subtotal.toLocaleString()}</span></div>
                     {discountAmt>0&&<div style={{display:'flex',justifyContent:'space-between',marginBottom:5,fontSize:13,color:MU}}><span>Discount</span><span style={{color:'#F87171'}}>- Rs. {discountAmt.toLocaleString()}</span></div>}
-                    <div style={{display:'flex',justifyContent:'space-between',marginBottom:8,fontSize:13,color:MU}}><span>GST (5%)</span><span style={{color:TX}}>Rs. {Math.round(gst).toLocaleString()}</span></div>
+                    <div style={{display:'flex',justifyContent:'space-between',marginBottom:8,fontSize:13,color:MU}}><span>GST ({gstPct}%)</span><span style={{color:TX}}>Rs. {Math.round(gst).toLocaleString()}</span></div>
                     <div style={{display:'flex',justifyContent:'space-between',fontSize:20,fontWeight:600,margin:'14px 0'}}><span>Total</span><span style={{color:GOLD}}>Rs. {Math.round(grandTotal).toLocaleString()}</span></div>
                     <div style={{display:'flex',gap:10}}>
                       <button onClick={()=>completeBill('cash')} disabled={loadingBill} style={{flex:1,padding:14,background:loadingBill?'#555':GOLD,color:'#000',border:'none',borderRadius:10,fontSize:14,fontWeight:700,cursor:loadingBill?'not-allowed':'pointer'}}>{loadingBill?'Saving...':'Cash'}</button>
@@ -754,6 +765,95 @@ export default function POSApp() {
             )}
           </div>
         )}
+        {tab==='settings'&&(
+          <div style={{maxWidth:500}}>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:20}}>
+              <p style={{fontSize:11,letterSpacing:2,color:GOLD,textTransform:'uppercase',margin:0}}>Shop Settings</p>
+              {!editSettings&&<button onClick={()=>setEditSettings(true)} style={goldBtn(false)}>Edit</button>}
+            </div>
+            {!editSettings?(
+              <div>
+                <div style={{background:SURF,border:'1px solid '+BOR,borderRadius:12,padding:20,marginBottom:12}}>
+                  <p style={{fontSize:11,color:DIM,letterSpacing:1.5,textTransform:'uppercase',margin:'0 0 16px'}}>GST Settings</p>
+                  <div style={{display:'flex',justifyContent:'space-between',marginBottom:10,paddingBottom:10,borderBottom:'1px solid #222'}}>
+                    <span style={{fontSize:13,color:MU}}>GSTIN</span>
+                    <span style={{fontSize:13,fontWeight:600,color:shopSettings.gstin?TX:'#F87171'}}>{shopSettings.gstin||'Not set'}</span>
+                  </div>
+                  <div style={{display:'flex',justifyContent:'space-between',marginBottom:10,paddingBottom:10,borderBottom:'1px solid #222'}}>
+                    <span style={{fontSize:13,color:MU}}>Default GST %</span>
+                    <span style={{fontSize:13,fontWeight:600,color:GOLD}}>{shopSettings.gstPercent||5}%</span>
+                  </div>
+                  <div style={{display:'flex',justifyContent:'space-between',marginBottom:10,paddingBottom:10,borderBottom:'1px solid #222'}}>
+                    <span style={{fontSize:13,color:MU}}>Shop Address</span>
+                    <span style={{fontSize:13,fontWeight:600,color:shopSettings.shopAddress?TX:'#F87171'}}>{shopSettings.shopAddress||'Not set'}</span>
+                  </div>
+                  <div style={{display:'flex',justifyContent:'space-between'}}>
+                    <span style={{fontSize:13,color:MU}}>Shop Phone</span>
+                    <span style={{fontSize:13,fontWeight:600,color:TX}}>{shopSettings.shopPhone||currentUser.phone}</span>
+                  </div>
+                </div>
+                <div style={{background:'#1A1000',border:'1px solid '+GOLD+'33',borderRadius:10,padding:12,fontSize:12,color:MU}}>
+                  ℹ️ GSTIN and GST % will automatically appear on every GST Invoice you generate.
+                </div>
+              </div>
+            ):(
+              <div style={{background:SURF,border:'1px solid '+BOR,borderRadius:12,padding:20}}>
+                <p style={{fontSize:11,color:DIM,letterSpacing:1.5,textTransform:'uppercase',margin:'0 0 16px'}}>Edit Settings</p>
+                <div style={{marginBottom:12}}>
+                  <p style={{fontSize:12,color:MU,margin:'0 0 6px'}}>GSTIN (15-digit GST Number)</p>
+                  <input
+                    placeholder='e.g. 29ABCDE1234F1Z5'
+                    value={shopSettings.gstin}
+                    onChange={e=>setShopSettings({...shopSettings,gstin:e.target.value.toUpperCase()})}
+                    style={{...inp,fontFamily:'monospace',letterSpacing:1}}
+                    maxLength={15}
+                  />
+                  {shopSettings.gstin&&shopSettings.gstin.length!==15&&<p style={{fontSize:11,color:'#F87171',margin:'4px 0 0'}}>GSTIN must be exactly 15 characters</p>}
+                </div>
+                <div style={{marginBottom:12}}>
+                  <p style={{fontSize:12,color:MU,margin:'0 0 6px'}}>Default GST % (applied to all bills)</p>
+                  <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+                    {[0,5,12,18,28].map(p=>(
+                      <button key={p} onClick={()=>setShopSettings({...shopSettings,gstPercent:p})} style={{padding:'8px 16px',borderRadius:8,fontSize:13,fontWeight:600,background:shopSettings.gstPercent===p?GOLD:SURF,color:shopSettings.gstPercent===p?'#000':MU,border:'1px solid '+(shopSettings.gstPercent===p?GOLD:'#333'),cursor:'pointer'}}>
+                        {p}%
+                      </button>
+                    ))}
+                    <input
+                      type='number'
+                      placeholder='Custom %'
+                      value={[0,5,12,18,28].includes(shopSettings.gstPercent)?'':shopSettings.gstPercent}
+                      onChange={e=>setShopSettings({...shopSettings,gstPercent:Number(e.target.value)})}
+                      style={{...inp,width:100,padding:'8px 12px'}}
+                    />
+                  </div>
+                </div>
+                <div style={{marginBottom:12}}>
+                  <p style={{fontSize:12,color:MU,margin:'0 0 6px'}}>Shop Address</p>
+                  <input
+                    placeholder='Full shop address'
+                    value={shopSettings.shopAddress}
+                    onChange={e=>setShopSettings({...shopSettings,shopAddress:e.target.value})}
+                    style={inp}
+                  />
+                </div>
+                <div style={{marginBottom:20}}>
+                  <p style={{fontSize:12,color:MU,margin:'0 0 6px'}}>Shop Phone (for invoice)</p>
+                  <input
+                    placeholder='Phone number'
+                    value={shopSettings.shopPhone}
+                    onChange={e=>setShopSettings({...shopSettings,shopPhone:e.target.value})}
+                    style={inp}
+                  />
+                </div>
+                <div style={{display:'flex',gap:8}}>
+                  <button onClick={()=>{saveSettings(shopSettings);setEditSettings(false);alert('Settings saved!');}} style={goldBtn(false)}>Save Settings</button>
+                  <button onClick={()=>setEditSettings(false)} style={ghostBtn}>Cancel</button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
       </div>
     </div>
   );
