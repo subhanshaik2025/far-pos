@@ -98,6 +98,36 @@ export default function POSApp() {
     else setCart(cart.map(c=>c.id===id?{...c,qty}:c));
   };
 
+  const generateBillText=(bill)=>{
+    const items=(typeof bill.items_json==='string'?JSON.parse(bill.items_json):(bill.items||[]));
+    const time=new Date(bill.timestamp).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+    let msg='';
+    msg+='🧾 FAR-POS — Bill Receipt\n';
+    msg+='━━━━━━━━━━━━━━━━━━━━\n';
+    msg+='Shop: '+currentUser.shop_name+'\n';
+    msg+='Bill: '+bill.id+'\n';
+    msg+='Date: '+bill.date+'\n';
+    msg+='Time: '+time+'\n';
+    msg+='━━━━━━━━━━━━━━━━━━━━\n';
+    msg+='ITEMS\n';
+    items.forEach(item=>{
+      const total=(item.price*item.qty).toLocaleString();
+      const dots='.'.repeat(Math.max(2,20-item.name.length-String(item.qty).length));
+      msg+=item.name+' x'+item.qty+' '+dots+' Rs. '+total+'\n';
+    });
+    msg+='━━━━━━━━━━━━━━━━━━━━\n';
+    msg+='Subtotal: Rs. '+Number(bill.subtotal).toLocaleString()+'\n';
+    if(bill.discount>0) msg+='Discount: - Rs. '+Number(bill.discount).toLocaleString()+'\n';
+    msg+='GST (5%): Rs. '+Number(bill.gst).toLocaleString()+'\n';
+    msg+='────────────────────\n';
+    msg+='TOTAL: Rs. '+Number(bill.total).toLocaleString()+'\n';
+    msg+='────────────────────\n';
+    msg+='Payment: '+bill.mode.toUpperCase()+'\n';
+    msg+='\nThank you for visiting!\n';
+    msg+='Powered by FAR-POS';
+    return msg;
+  };
+
   const completeBill=async(mode)=>{
     if(cart.length===0){alert('Cart is empty');return;}
     setLoadingBill(true);
@@ -117,7 +147,8 @@ export default function POSApp() {
     setBills(updated);
     localStorage.setItem('pos-bills',JSON.stringify(updated));
     setCart([]); setDiscount(0); setLoadingBill(false);
-    alert('Bill saved! Total: Rs.'+bill.total);
+    const billText=generateBillText(bill);
+    window.open('https://wa.me/?text='+encodeURIComponent(billText),'_blank');
   };
 
   const shareOnWhatsApp=(bill)=>{
