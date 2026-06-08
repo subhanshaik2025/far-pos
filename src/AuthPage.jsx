@@ -3,6 +3,81 @@ import { registerUser, loginUser } from './auth';
 import { verifyPhoneNumberFromSheet } from './googleSheets';
 import { INDUSTRIES } from './config';
 
+const GOLD = '#C9A84C';
+const BG = '#0F0F0F';
+const SURFACE = '#1A1A1A';
+const BORDER = '#2A2A2A';
+const TEXT = '#DDDDDD';
+const MUTED = '#888888';
+
+const inputStyle = {
+  width: '100%',
+  padding: '13px 16px',
+  borderRadius: 10,
+  border: '1px solid #333',
+  background: '#111',
+  color: TEXT,
+  fontSize: 14,
+  outline: 'none',
+  boxSizing: 'border-box',
+  marginBottom: 12,
+};
+
+const goldBtn = {
+  width: '100%',
+  padding: 14,
+  borderRadius: 10,
+  fontSize: 14,
+  fontWeight: 700,
+  background: GOLD,
+  color: '#000',
+  border: 'none',
+  cursor: 'pointer',
+  letterSpacing: 1,
+  marginBottom: 10,
+};
+
+const ghostBtn = {
+  width: '100%',
+  padding: 14,
+  borderRadius: 10,
+  fontSize: 14,
+  fontWeight: 600,
+  background: 'transparent',
+  color: GOLD,
+  border: '1px solid #333',
+  cursor: 'pointer',
+  letterSpacing: 0.5,
+};
+
+const card = {
+  background: SURFACE,
+  borderRadius: 20,
+  padding: 36,
+  maxWidth: 420,
+  width: '100%',
+  border: '1px solid #2A2A2A',
+};
+
+const page = {
+  background: BG,
+  minHeight: '100vh',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  padding: 20,
+};
+
+const errorBox = {
+  background: '#2A1010',
+  color: '#FF6B6B',
+  padding: '10px 14px',
+  borderRadius: 8,
+  marginBottom: 14,
+  fontSize: 13,
+  border: '1px solid #4A2020',
+};
+
 export default function AuthPage({ onLoginSuccess }) {
   const [step, setStep] = useState('login');
   const [phone, setPhone] = useState('');
@@ -14,7 +89,7 @@ export default function AuthPage({ onLoginSuccess }) {
   const [error, setError] = useState('');
 
   const handleLogin = async () => {
-    if (!phone || !password) { setError('Fill all fields'); return; }
+    if (!phone || !password) { setError('Please fill all fields'); return; }
     setLoading(true); setError('');
     const result = await loginUser(phone, password);
     setLoading(false);
@@ -35,96 +110,107 @@ export default function AuthPage({ onLoginSuccess }) {
   };
 
   const handleRegister = async () => {
-    if (!phone || !password || !industry) { setError('Fill all fields'); return; }
+    if (!phone || !password || !industry) { setError('Please fill all fields'); return; }
     setLoading(true); setError('');
     const result = await registerUser(shop, name, phone, password, industry);
     setLoading(false);
     if (result.success) { onLoginSuccess(result.userData); } else { setError(result.error); }
   };
 
-  if (step === 'login') {
-    return (
-      <div style={{ background: 'linear-gradient(135deg, #E6F7F5, #F3F3EE)', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
-        <div style={{ background: '#fff', borderRadius: 16, padding: 32, maxWidth: 400, width: '100%' }}>
-          <h1 style={{ fontSize: 28, fontWeight: 700, color: '#0D9488', marginBottom: 8, textAlign: 'center' }}>FAR-POS</h1>
-          <p style={{ fontSize: 13, color: '#999', marginBottom: 24, textAlign: 'center' }}>Point of Sale</p>
-          <div style={{ marginBottom: 16 }}>
-            <input type='tel' placeholder='Phone Number' value={phone} onChange={(e) => setPhone(e.target.value)} style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid #e0e0e0', fontSize: 14 }} />
-          </div>
-          <div style={{ marginBottom: 16 }}>
-            <input type='password' placeholder='Password' value={password} onChange={(e) => setPassword(e.target.value)} style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid #e0e0e0', fontSize: 14 }} />
-          </div>
-          {error && <div style={{ background: '#FEF2F2', color: '#DC2626', padding: '10px 12px', borderRadius: 8, marginBottom: 16, fontSize: 12 }}>{error}</div>}
-          <button onClick={handleLogin} disabled={loading} style={{ width: '100%', padding: 12, borderRadius: 10, fontSize: 14, fontWeight: 700, background: loading ? '#aaa' : '#0D9488', color: '#fff', border: 'none', cursor: loading ? 'not-allowed' : 'pointer', marginBottom: 12 }}>
-            {loading ? 'Please wait...' : 'Login'}
+  if (step === 'login') return (
+    <div style={page}>
+      <div style={card}>
+        <div style={{ textAlign: 'center', marginBottom: 32 }}>
+          <div style={{ fontSize: 13, letterSpacing: 4, color: MUTED, marginBottom: 8, textTransform: 'uppercase' }}>Welcome to</div>
+          <div style={{ fontSize: 36, fontWeight: 700, letterSpacing: 6, color: GOLD }}>FAR — POS</div>
+          <div style={{ fontSize: 12, color: '#555', marginTop: 8, letterSpacing: 2, textTransform: 'uppercase' }}>Point of Sale System</div>
+          <div style={{ width: 40, height: 2, background: GOLD, margin: '16px auto 0', borderRadius: 2 }}></div>
+        </div>
+        {error && <div style={errorBox}>⚠ {error}</div>}
+        <input type='tel' placeholder='Phone Number' value={phone} onChange={e=>setPhone(e.target.value)} style={inputStyle} />
+        <input type='password' placeholder='Password' value={password} onChange={e=>setPassword(e.target.value)} style={inputStyle} />
+        <button onClick={handleLogin} disabled={loading} style={{...goldBtn, background: loading?'#555':GOLD, cursor: loading?'not-allowed':'pointer'}}>
+          {loading ? 'Verifying...' : 'Login'}
+        </button>
+        <button onClick={()=>{setStep('verify');setError('');setPhone('');setPassword('');}} style={ghostBtn}>New User? Register</button>
+        <div style={{ textAlign: 'center', marginTop: 20, fontSize: 11, color: '#444', letterSpacing: 1 }}>POWERED BY FAR TECHNOLOGIES</div>
+      </div>
+    </div>
+  );
+
+  if (step === 'verify') return (
+    <div style={page}>
+      <div style={card}>
+        <div style={{ marginBottom: 24 }}>
+          <div style={{ fontSize: 11, color: MUTED, letterSpacing: 2, textTransform: 'uppercase', marginBottom: 6 }}>Step 1 of 3</div>
+          <div style={{ fontSize: 22, fontWeight: 700, color: GOLD, letterSpacing: 1 }}>Verify Phone</div>
+          <div style={{ width: 30, height: 2, background: GOLD, marginTop: 10, borderRadius: 2 }}></div>
+        </div>
+        {error && <div style={errorBox}>⚠ {error}</div>}
+        <input type='tel' placeholder='Enter your phone number' value={phone} onChange={e=>setPhone(e.target.value)} style={inputStyle} />
+        <button onClick={handleVerify} disabled={loading} style={{...goldBtn, background:loading?'#555':GOLD, cursor:loading?'not-allowed':'pointer'}}>
+          {loading ? 'Checking...' : 'Verify Number'}
+        </button>
+        <button onClick={()=>{setStep('login');setError('');}} style={ghostBtn}>Back to Login</button>
+      </div>
+    </div>
+  );
+
+  if (step === 'password') return (
+    <div style={page}>
+      <div style={card}>
+        <div style={{ marginBottom: 24 }}>
+          <div style={{ fontSize: 11, color: MUTED, letterSpacing: 2, textTransform: 'uppercase', marginBottom: 6 }}>Step 2 of 3</div>
+          <div style={{ fontSize: 22, fontWeight: 700, color: GOLD, letterSpacing: 1 }}>Create Password</div>
+          <div style={{ width: 30, height: 2, background: GOLD, marginTop: 10, borderRadius: 2 }}></div>
+        </div>
+        <div style={{ background: '#111', border: '1px solid #C9A84C33', borderRadius: 10, padding: '12px 16px', marginBottom: 16 }}>
+          <div style={{ fontSize: 11, color: GOLD, letterSpacing: 1, marginBottom: 4 }}>✓ VERIFIED</div>
+          <div style={{ fontSize: 14, fontWeight: 600, color: TEXT }}>{name}</div>
+          <div style={{ fontSize: 12, color: MUTED }}>{shop} · {phone}</div>
+        </div>
+        {error && <div style={errorBox}>⚠ {error}</div>}
+        <input type='password' placeholder='Create a password' value={password} onChange={e=>setPassword(e.target.value)} style={inputStyle} />
+        <button onClick={()=>setStep('industry')} style={goldBtn}>Next →</button>
+        <button onClick={()=>{setStep('verify');setError('');}} style={ghostBtn}>Back</button>
+      </div>
+    </div>
+  );
+
+  if (step === 'industry') return (
+    <div style={{...page, alignItems: 'flex-start', paddingTop: 40}}>
+      <div style={{ maxWidth: 700, width: '100%' }}>
+        <div style={{ textAlign: 'center', marginBottom: 28 }}>
+          <div style={{ fontSize: 11, color: MUTED, letterSpacing: 2, textTransform: 'uppercase', marginBottom: 6 }}>Step 3 of 3</div>
+          <div style={{ fontSize: 22, fontWeight: 700, color: GOLD, letterSpacing: 1 }}>Select Business Type</div>
+          <div style={{ width: 30, height: 2, background: GOLD, margin: '10px auto 0', borderRadius: 2 }}></div>
+        </div>
+        {error && <div style={{...errorBox, maxWidth: 420, margin: '0 auto 16px'}}>⚠ {error}</div>}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px,1fr))', gap: 12, marginBottom: 20 }}>
+          {Object.entries(INDUSTRIES).map(([key, ind]) => (
+            <div key={key} onClick={()=>setIndustry(key)} style={{
+              background: industry===key ? '#1E1A10' : SURFACE,
+              border: industry===key ? '1.5px solid '+GOLD : '1px solid '+BORDER,
+              borderRadius: 16,
+              padding: 20,
+              cursor: 'pointer',
+              textAlign: 'center',
+              transition: 'all 0.2s',
+            }}>
+              <div style={{ fontSize: 38, marginBottom: 10 }}>{ind.icon}</div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: industry===key ? GOLD : TEXT }}>{ind.name}</div>
+            </div>
+          ))}
+        </div>
+        <div style={{ display: 'flex', gap: 10, maxWidth: 420, margin: '0 auto' }}>
+          <button onClick={()=>{setStep('password');setError('');}} style={{...ghostBtn, flex:1, marginBottom:0}}>Back</button>
+          <button onClick={handleRegister} disabled={loading} style={{...goldBtn, flex:1, marginBottom:0, background:loading?'#555':GOLD, cursor:loading?'not-allowed':'pointer'}}>
+            {loading ? 'Creating...' : 'Create Account'}
           </button>
-          <button onClick={() => { setStep('verify'); setError(''); setPhone(''); setPassword(''); }} style={{ width: '100%', padding: 12, borderRadius: 10, fontSize: 14, fontWeight: 700, background: '#f0f0f0', color: '#0D9488', border: 'none', cursor: 'pointer' }}>New User? Register</button>
         </div>
       </div>
-    );
-  }
-
-  if (step === 'verify') {
-    return (
-      <div style={{ background: 'linear-gradient(135deg, #E6F7F5, #F3F3EE)', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
-        <div style={{ background: '#fff', borderRadius: 16, padding: 32, maxWidth: 400, width: '100%' }}>
-          <h2 style={{ fontSize: 20, fontWeight: 700, color: '#0D9488', marginBottom: 20 }}>Verify Phone</h2>
-          <div style={{ marginBottom: 16 }}>
-            <input type='tel' placeholder='Phone Number' value={phone} onChange={(e) => setPhone(e.target.value)} style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid #e0e0e0', fontSize: 14 }} />
-          </div>
-          {error && <div style={{ background: '#FEF2F2', color: '#DC2626', padding: '10px 12px', borderRadius: 8, marginBottom: 16, fontSize: 12 }}>{error}</div>}
-          <button onClick={handleVerify} disabled={loading} style={{ width: '100%', padding: 12, borderRadius: 10, fontSize: 14, fontWeight: 700, background: loading ? '#aaa' : '#0D9488', color: '#fff', border: 'none', cursor: loading ? 'not-allowed' : 'pointer', marginBottom: 12 }}>
-            {loading ? 'Verifying...' : 'Verify'}
-          </button>
-          <button onClick={() => { setStep('login'); setError(''); }} style={{ width: '100%', padding: 12, borderRadius: 10, fontSize: 14, fontWeight: 700, background: '#f0f0f0', color: '#666', border: 'none', cursor: 'pointer' }}>Back</button>
-        </div>
-      </div>
-    );
-  }
-
-  if (step === 'password') {
-    return (
-      <div style={{ background: 'linear-gradient(135deg, #E6F7F5, #F3F3EE)', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
-        <div style={{ background: '#fff', borderRadius: 16, padding: 32, maxWidth: 400, width: '100%' }}>
-          <h2 style={{ fontSize: 20, fontWeight: 700, color: '#0D9488', marginBottom: 20 }}>Create Password</h2>
-          <div style={{ background: '#E6F7F5', padding: 12, borderRadius: 8, marginBottom: 16 }}>
-            <p style={{ fontSize: 12, color: '#0D9488', fontWeight: 600 }}>Verified: {phone}</p>
-            <p style={{ fontSize: 13, fontWeight: 600, color: '#1a1a1a' }}>{name} - {shop}</p>
-          </div>
-          <div style={{ marginBottom: 16 }}>
-            <input type='password' placeholder='Password' value={password} onChange={(e) => setPassword(e.target.value)} style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid #e0e0e0', fontSize: 14 }} />
-          </div>
-          <button onClick={() => setStep('industry')} style={{ width: '100%', padding: 12, borderRadius: 10, fontSize: 14, fontWeight: 700, background: '#0D9488', color: '#fff', border: 'none', cursor: 'pointer', marginBottom: 12 }}>Next</button>
-          <button onClick={() => { setStep('verify'); setError(''); }} style={{ width: '100%', padding: 12, borderRadius: 10, fontSize: 14, fontWeight: 700, background: '#f0f0f0', color: '#666', border: 'none', cursor: 'pointer' }}>Back</button>
-        </div>
-      </div>
-    );
-  }
-
-  if (step === 'industry') {
-    return (
-      <div style={{ background: 'linear-gradient(135deg, #E6F7F5, #F3F3EE)', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
-        <div style={{ maxWidth: 900, width: '100%' }}>
-          <h2 style={{ fontSize: 20, fontWeight: 700, color: '#0D9488', marginBottom: 20, textAlign: 'center' }}>Select Business Type</h2>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginBottom: 20 }}>
-            {Object.entries(INDUSTRIES).map(([key, ind]) => (
-              <div key={key} onClick={() => setIndustry(key)} style={{ background: industry === key ? '#E6F7F5' : '#fff', borderRadius: 16, padding: 20, cursor: 'pointer', border: industry === key ? '2px solid #0D9488' : '2px solid #eee', textAlign: 'center' }}>
-                <div style={{ fontSize: 40, marginBottom: 12 }}>{ind.icon}</div>
-                <h3 style={{ fontSize: 14, fontWeight: 700, color: '#1a1a1a', marginBottom: 4 }}>{ind.name}</h3>
-              </div>
-            ))}
-          </div>
-          {error && <div style={{ background: '#FEF2F2', color: '#DC2626', padding: '10px 12px', borderRadius: 8, marginBottom: 16, fontSize: 12 }}>{error}</div>}
-          <div style={{ display: 'flex', gap: 12 }}>
-            <button onClick={() => setStep('password')} style={{ flex: 1, padding: 12, borderRadius: 10, fontSize: 14, fontWeight: 700, background: '#f0f0f0', color: '#666', border: 'none', cursor: 'pointer' }}>Back</button>
-            <button onClick={handleRegister} disabled={loading} style={{ flex: 1, padding: 12, borderRadius: 10, fontSize: 14, fontWeight: 700, background: loading ? '#aaa' : '#0D9488', color: '#fff', border: 'none', cursor: loading ? 'not-allowed' : 'pointer' }}>
-              {loading ? 'Creating...' : 'Create Account'}
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
+    </div>
+  );
 
   return null;
 }
