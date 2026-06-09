@@ -330,7 +330,7 @@ export default function POSApp() {
     window.open('https://wa.me/?text='+encodeURIComponent(msg));
   };
 
-  const parseBillDate=(b)=>b.timestamp?new Date(b.timestamp):b.date?new Date(b.date):new Date();
+  const parseBillDate=(b)=>{ try { if(b.timestamp&&String(b.timestamp).length>8) return new Date(b.timestamp); if(b.date) { const p=String(b.date).split("/"); if(p.length===3) return new Date(p[2]+"-"+p[1].padStart(2,"0")+"-"+p[0].padStart(2,"0")); return new Date(b.date); } return new Date(); } catch(e){return new Date();} };
   const filterByDate=(bills,d)=>bills.filter(b=>parseBillDate(b).toISOString().split('T')[0]===d);
   const filterByWeek=(bills)=>{const w=new Date(Date.now()-7*86400000);return bills.filter(b=>parseBillDate(b)>=w);};
   const filterByMonth=(bills)=>{const n=new Date();return bills.filter(b=>{const d=parseBillDate(b);return d.getMonth()===n.getMonth()&&d.getFullYear()===n.getFullYear();});};
@@ -655,7 +655,7 @@ export default function POSApp() {
               <p style={{...sT,margin:0}}>Reports</p>
               <div style={{display:'flex',gap:8}}>
                 <button onClick={()=>setShowAddExpense(true)} style={ghostBtn}>+ Expense</button>
-                <button onClick={()=>getSalesFromSheet(currentUser.shop_name).then(s=>setBills(s))} style={ghostBtn}>Refresh</button>
+                <button onClick={()=>getSalesFromSheet(currentUser).then(s=>setBills(s))} style={ghostBtn}>Refresh</button>
               </div>
             </div>
             {showAddExpense&&(

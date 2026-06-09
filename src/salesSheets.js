@@ -1,10 +1,10 @@
-const URL = 'https://script.google.com/macros/s/AKfycbyBNoTxT-GDDEsHyMujLsyqkTLC-F3O7UB3jTW-PQOY8d9hOuOcEBMziuJBLWPci7QVNA/exec';
+const URL = 'https://script.google.com/macros/s/AKfycbyMUZGS_e2hQkaz24p5QPAjUD2JmF-1tniTvGtgEHi-JFn9JgxoJHMaOsF6Wm4WtcjhyA/exec';
 
 const call = async (params) => {
   try {
     const res = await fetch(URL + '?' + new URLSearchParams(params).toString());
     return await res.json();
-  } catch(e) { return { success: false }; }
+  } catch(e) { console.error('Sheet error:', e); return { success: false }; }
 };
 
 export async function saveBillToSheet(bill, user) {
