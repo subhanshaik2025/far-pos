@@ -98,7 +98,7 @@ export default function AdminApp() {
       <div style={{background:SURF,borderRadius:20,padding:36,maxWidth:400,width:'100%',border:'1px solid '+BOR}}>
         <div style={{textAlign:'center',marginBottom:32}}>
           <div style={{fontSize:11,letterSpacing:4,color:MU,marginBottom:8,textTransform:'uppercase'}}>Admin Access</div>
-          <div style={{fontSize:32,fontWeight:700,letterSpacing:4,color:GOLD}}>FAR — POS</div>
+          <img src='/logo.png' style={{height:80,objectFit:'contain',marginBottom:8}} alt='FAR POS' />
           <div style={{fontSize:11,color:DIM,marginTop:8,letterSpacing:2,textTransform:'uppercase'}}>Control Panel</div>
           <div style={{width:40,height:2,background:GOLD,margin:'14px auto 0',borderRadius:2}}></div>
         </div>
@@ -117,7 +117,7 @@ export default function AdminApp() {
     <div style={{fontFamily:'sans-serif',background:BG,minHeight:'100vh',color:TX}}>
       <div style={{background:SURF,borderBottom:'1px solid '+BOR,padding:'14px 24px',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
         <div>
-          <div style={{fontSize:20,fontWeight:600,letterSpacing:3,color:GOLD}}>FAR — POS</div>
+          <img src='/logo.png' style={{height:36,objectFit:'contain'}} alt='FAR POS' />
           <div style={{fontSize:11,color:MU,marginTop:2,letterSpacing:1}}>ADMIN CONTROL PANEL</div>
         </div>
         <div style={{display:'flex',gap:10}}>

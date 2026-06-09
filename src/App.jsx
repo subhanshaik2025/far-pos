@@ -189,7 +189,7 @@ export default function POSApp() {
 <div class="page">
   <div class="header">
     <div>
-      <div class="logo">FAR — POS</div>
+      <img src='https://far-pos.vercel.app/logo.png' style='height:48px;object-fit:contain;' alt='FAR POS' />
       <div style="font-size:15px;font-weight:700;margin-top:4px;">${currentUser.shop_name}</div>
       <div style="font-size:12px;color:#666;">Owner: ${currentUser.owner_name}</div>
       <div style="font-size:12px;color:#666;">Ph: ${currentUser.phone}</div>
@@ -385,7 +385,7 @@ export default function POSApp() {
     <div style={{fontFamily:'sans-serif',background:BG,minHeight:'100vh',color:TX}}>
       <div style={{background:SURF,borderBottom:'1px solid '+BOR,padding:'14px 20px',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
         <div>
-          <div style={{fontSize:20,fontWeight:600,letterSpacing:3,color:GOLD}}>FAR — POS</div>
+          <img src='/logo.png' style={{height:36,objectFit:'contain'}} alt='FAR POS' />
           <div style={{fontSize:12,color:MU,marginTop:2}}>{currentUser?.shop_name} · {currentUser?.owner_name}</div>
         </div>
         <div style={{display:'flex',gap:8,alignItems:'center'}}>
