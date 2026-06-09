@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import AuthPage from './AuthPage';
 import { getCurrentUser, isUserLoggedIn, logoutUser } from './auth';
-import { INDUSTRIES } from './config';
+import { INDUSTRIES, TRANSLATIONS } from './config';
 import { generateId, calculateTotal } from './utils';
 import { initializeAppData } from './loadGoogleSheet';
 import { saveBillToSheet, getSalesFromSheet, saveProductsToSheet, getProductsFromSheet, saveKhataToSheet, getKhataFromSheet, saveExpensesToSheet, getExpensesFromSheet, saveSettingsToSheet, getSettingsFromSheet } from './salesSheets';
@@ -38,6 +38,8 @@ export default function POSApp() {
   const [showBillDetail,setShowBillDetail]=useState(null);
   const [shopSettings,setShopSettings]=useState({gstin:'',gstPercent:5,shopAddress:'',shopPhone:''});
   const [editSettings,setEditSettings]=useState(false);
+  const [lang,setLang]=useState(localStorage.getItem('far-pos-lang')||'en');
+  const t=(k)=>(TRANSLATIONS[lang]&&TRANSLATIONS[lang][k])||TRANSLATIONS['en'][k]||k;
 
   useEffect(()=>{
     initializeAppData();
@@ -390,13 +392,18 @@ export default function POSApp() {
         </div>
         <div style={{display:'flex',gap:8,alignItems:'center'}}>
           {lowStock.length>0&&<div style={{background:'#2A1A00',border:'1px solid #C9A84C44',borderRadius:8,padding:'4px 10px',fontSize:11,color:GOLD}}>⚠ {lowStock.length} low stock</div>}
+          <div style={{display:'flex',gap:4}}>
+            {['en','te','hi'].map(l=>(
+              <button key={l} onClick={()=>{setLang(l);localStorage.setItem('far-pos-lang',l);}} style={{padding:'4px 8px',borderRadius:6,fontSize:11,fontWeight:600,background:lang===l?GOLD:'#2A2A2A',color:lang===l?'#000':MU,border:'none',cursor:'pointer'}}>{l==='en'?'EN':l==='te'?'తె':'हि'}</button>
+            ))}
+          </div>
           <button onClick={handleLogout} style={{background:'#2A2A2A',border:'1px solid #3A3A3A',color:MU,padding:'6px 14px',borderRadius:8,fontSize:12,cursor:'pointer'}}>Logout</button>
         </div>
       </div>
 
       <div style={{background:'#141414',display:'flex',gap:4,padding:'10px 20px 0',borderBottom:'1px solid #222',overflowX:'auto'}}>
         {['billing','products','inventory','khata','history','reports','settings'].map(f=>(
-          <button key={f} onClick={()=>setTab(f)} style={tabStyle(tab===f)}>{f.charAt(0).toUpperCase()+f.slice(1)}</button>
+          <button key={f} onClick={()=>setTab(f)} style={tabStyle(tab===f)}>{t(f)||f.charAt(0).toUpperCase()+f.slice(1)}</button>
         ))}
       </div>
 
