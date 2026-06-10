@@ -8,6 +8,10 @@ export function parseItems(bill) {
 }
 
 export function parseBillDate(b) {
+  // Normalize field names from Google Sheets
+  const timestamp = b.timestamp || b.Timestamp || '';
+  const date = b.date || b.Date || '';
+  b = { ...b, timestamp, date };
   try {
     if (b.timestamp) {
       const t = new Date(b.timestamp);

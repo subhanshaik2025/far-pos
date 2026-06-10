@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { GOLD, GOLD_L, BOR, SURF, TX, DIM, MU, inp, goldBtn, ghostBtn, card, sT } from '../utils/theme';
 import { filterByDate, filterByWeek, filterByMonth, getTopProducts, getDayWise } from '../utils/billUtils';
 import { getSalesFromSheet } from '../salesSheets';
+import { parseBillDate } from '../utils/billUtils';
 
 export default function ReportsTab({ bills, setBills, expenses, saveExpenses, currentUser, userRef, generateId, showToast }) {
   const [reportView, setReportView] = useState('daily');
@@ -10,10 +11,18 @@ export default function ReportsTab({ bills, setBills, expenses, saveExpenses, cu
   const [showAddExpense, setShowAddExpense] = useState(false);
   const [newExpense, setNewExpense] = useState({title:'',amount:'',category:'rent'});
 
-  const selectedBills = reportView==='daily' ? filterByDate(bills,selectedDate) : reportView==='weekly' ? filterByWeek(bills) : filterByMonth(bills);
+  const safeBills = bills.map(b => ({
+    ...b,
+    total: Number(b.total || b.Total || 0),
+    gst: Number(b.gst || b.GST || 0),
+    mode: String(b.mode || b.payment_mode || b.Payment_mode || ''),
+    timestamp: b.timestamp || b.Timestamp || '',
+    date: b.date || b.Date || '',
+  }));
+  const selectedBills = reportView==='daily' ? filterByDate(safeBills,selectedDate) : reportView==='weekly' ? filterByWeek(safeBills) : filterByMonth(safeBills);
   const totalSales = selectedBills.reduce((s,b)=>s+Number(b.total||0),0);
-  const cashSales = selectedBills.filter(b=>(b.mode||b.payment_mode)==='cash').reduce((s,b)=>s+Number(b.total||0),0);
-  const upiSales = selectedBills.filter(b=>(b.mode||b.payment_mode)==='upi').reduce((s,b)=>s+Number(b.total||0),0);
+  const cashSales = selectedBills.filter(b=>b.mode==='cash').reduce((s,b)=>s+Number(b.total||0),0);
+  const upiSales = selectedBills.filter(b=>b.mode==='upi').reduce((s,b)=>s+Number(b.total||0),0);
   const gstTotal = selectedBills.reduce((s,b)=>s+Number(b.gst||0),0);
   const totalExpenses = expenses.filter(e=>{
     if(reportView==='daily') return e.date===selectedDate;
@@ -23,7 +32,7 @@ export default function ReportsTab({ bills, setBills, expenses, saveExpenses, cu
   }).reduce((s,e)=>s+Number(e.amount||0),0);
   const netProfit = totalSales - gstTotal - totalExpenses;
   const topProducts = getTopProducts(selectedBills);
-  const dayWise = getDayWise(reportView==='weekly'?filterByWeek(bills):filterByMonth(bills));
+  const dayWise = getDayWise(reportView==='weekly'?filterByWeek(safeBills):filterByMonth(safeBills));
   const maxDay = Math.max(...dayWise.map(d=>d.total),1);
 
   return (
