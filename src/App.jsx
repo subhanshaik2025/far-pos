@@ -5,7 +5,7 @@ import { INDUSTRIES, TRANSLATIONS } from './config';
 import { generateId, calculateTotal } from './utils';
 import { initializeAppData } from './loadGoogleSheet';
 import { saveBillToSheet, getSalesFromSheet, saveProductsToSheet, getProductsFromSheet, saveKhataToSheet, getKhataFromSheet, saveExpensesToSheet, getExpensesFromSheet, saveSettingsToSheet, getSettingsFromSheet } from './salesSheets';
-import { GOLD, BOR, SURF, TX, DIM, MU, inp, goldBtn, ghostBtn, card, sT } from './utils/theme';
+import { GOLD, GOLD_L, BG, BOR, SURF, TX, DIM, MU, inp, goldBtn, ghostBtn, card, sT } from './utils/theme';
 import { parseItems } from './utils/billUtils';
 import BillingTab from './components/BillingTab';
 import HistoryTab from './components/HistoryTab';
