@@ -41,17 +41,15 @@ export default function POSApp() {
 
   const loadUserData = (user, ind) => {
     setAppLoading(true);
-    getAllVendorData(user).then(data => {
-      if(data.sales&&data.sales.length>=0) setBills(data.sales);
-      if(data.products&&data.products.length>0) setProducts(data.products);
-      else { const sv=localStorage.getItem('pos-products-'+user.id); if(sv) setProducts(JSON.parse(sv)); else setProducts(ind.sampleProducts||[]); }
-      if(data.settings) setShopSettings(data.settings);
-      else { const sv=localStorage.getItem('pos-settings-'+user.id); if(sv) setShopSettings(JSON.parse(sv)); }
-      if(data.khata&&data.khata.length>0) setKhata(data.khata);
-      else { const sv=localStorage.getItem('pos-khata-'+user.id); if(sv) setKhata(JSON.parse(sv)); }
-      if(data.expenses&&data.expenses.length>0) setExpenses(data.expenses);
-      else { const sv=localStorage.getItem('pos-expenses-'+user.id); if(sv) setExpenses(JSON.parse(sv)); }
-    }).finally(()=>setAppLoading(false));
+    // Load sales first so app is usable fast
+    getSalesFromSheet(user).then(s=>{ if(s) setBills(s); }).catch(()=>{});
+    // Load other data in background
+    getProductsFromSheet(user).then(p=>{ if(p&&p.length>0) setProducts(p); else { const sv=localStorage.getItem('pos-products-'+user.id); if(sv) setProducts(JSON.parse(sv)); else setProducts(ind.sampleProducts||[]); } }).catch(()=>{});
+    getSettingsFromSheet(user).then(st=>{ if(st) setShopSettings(st); else { const sv=localStorage.getItem('pos-settings-'+user.id); if(sv) setShopSettings(JSON.parse(sv)); } }).catch(()=>{});
+    getKhataFromSheet(user).then(k=>{ if(k&&k.length>0) setKhata(k); else { const sv=localStorage.getItem('pos-khata-'+user.id); if(sv) setKhata(JSON.parse(sv)); } }).catch(()=>{});
+    getExpensesFromSheet(user).then(e=>{ if(e&&e.length>0) setExpenses(e); else { const sv=localStorage.getItem('pos-expenses-'+user.id); if(sv) setExpenses(JSON.parse(sv)); } }).catch(()=>{});
+    // Show app after 3 seconds regardless
+    setTimeout(()=>setAppLoading(false), 3000);
   };
 
   useEffect(()=>{

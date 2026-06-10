@@ -1,9 +1,63 @@
-
 import { useState } from 'react';
 import { GOLD, GOLD_L, BOR, SURF, TX, DIM, MU, inp, goldBtn, ghostBtn, card, sT } from '../utils/theme';
-import { filterByDate, filterByWeek, filterByMonth, getTopProducts, getDayWise } from '../utils/billUtils';
 import { getSalesFromSheet } from '../salesSheets';
-import { parseBillDate } from '../utils/billUtils';
+
+function parseBillDate(b) {
+  try {
+    const ts = b.timestamp || b.Timestamp || '';
+    const dt = b.date || b.Date || '';
+    if (ts && String(ts).includes('T')) { const d = new Date(ts); if (!isNaN(d)) return d; }
+    if (dt) {
+      const s = String(dt).trim();
+      const p = s.split('/');
+      if (p.length === 3) { const d = new Date(p[2]+'-'+p[1].padStart(2,'0')+'-'+p[0].padStart(2,'0')); if (!isNaN(d)) return d; }
+      const d2 = new Date(s); if (!isNaN(d2)) return d2;
+    }
+    return new Date();
+  } catch(e) { return new Date(); }
+}
+
+function normalBill(b) {
+  return {
+    ...b,
+    total: Number(b.total || b.Total || 0),
+    gst: Number(b.gst || b.GST || 0),
+    discount: Number(b.discount || b.Discount || 0),
+    mode: String(b.mode || b.payment_mode || b.Payment_mode || '').toLowerCase(),
+    timestamp: b.timestamp || b.Timestamp || '',
+    date: b.date || b.Date || '',
+    items_json: b.items_json || b.Items_json || '',
+    items: b.items || [],
+  };
+}
+
+function getTopProducts(bills) {
+  const map = {};
+  bills.forEach(b => {
+    let items = [];
+    try { items = typeof b.items_json === 'string' && b.items_json ? JSON.parse(b.items_json) : (b.items||[]); } catch(e){}
+    items.forEach(item => {
+      const name = item.name || 'Unknown';
+      if (!map[name]) map[name] = { name, qty:0, revenue:0 };
+      map[name].qty += Number(item.qty||1);
+      map[name].revenue += Number(item.price||0) * Number(item.qty||1);
+    });
+  });
+  return Object.values(map).sort((a,b)=>b.revenue-a.revenue).slice(0,5);
+}
+
+function getDayWise(bills) {
+  const map = {};
+  bills.forEach(b => {
+    const d = parseBillDate(b).toISOString().split('T')[0];
+    if (!map[d]) map[d] = { date:d, total:0, cash:0, upi:0, count:0 };
+    map[d].total += Number(b.total||0);
+    map[d].count++;
+    if (b.mode === 'cash') map[d].cash += Number(b.total||0);
+    else map[d].upi += Number(b.total||0);
+  });
+  return Object.values(map).sort((a,b)=>b.date.localeCompare(a.date));
+}
 
 export default function ReportsTab({ bills, setBills, expenses, saveExpenses, currentUser, userRef, generateId, showToast }) {
   const [reportView, setReportView] = useState('daily');
@@ -11,19 +65,17 @@ export default function ReportsTab({ bills, setBills, expenses, saveExpenses, cu
   const [showAddExpense, setShowAddExpense] = useState(false);
   const [newExpense, setNewExpense] = useState({title:'',amount:'',category:'rent'});
 
-  const safeBills = bills.map(b => ({
-    ...b,
-    total: Number(b.total || b.Total || 0),
-    gst: Number(b.gst || b.GST || 0),
-    mode: String(b.mode || b.payment_mode || b.Payment_mode || ''),
-    timestamp: b.timestamp || b.Timestamp || '',
-    date: b.date || b.Date || '',
-  }));
-  const selectedBills = reportView==='daily' ? filterByDate(safeBills,selectedDate) : reportView==='weekly' ? filterByWeek(safeBills) : filterByMonth(safeBills);
-  const totalSales = selectedBills.reduce((s,b)=>s+Number(b.total||0),0);
-  const cashSales = selectedBills.filter(b=>b.mode==='cash').reduce((s,b)=>s+Number(b.total||0),0);
-  const upiSales = selectedBills.filter(b=>b.mode==='upi').reduce((s,b)=>s+Number(b.total||0),0);
-  const gstTotal = selectedBills.reduce((s,b)=>s+Number(b.gst||0),0);
+  const normalBills = bills.map(normalBill);
+
+  const filterByDate = (bs, d) => bs.filter(b => parseBillDate(b).toISOString().split('T')[0] === d);
+  const filterByWeek = (bs) => { const w = new Date(Date.now()-7*86400000); return bs.filter(b => parseBillDate(b) >= w); };
+  const filterByMonth = (bs) => { const n = new Date(); return bs.filter(b => { const d=parseBillDate(b); return d.getMonth()===n.getMonth()&&d.getFullYear()===n.getFullYear(); }); };
+
+  const selectedBills = reportView==='daily' ? filterByDate(normalBills,selectedDate) : reportView==='weekly' ? filterByWeek(normalBills) : filterByMonth(normalBills);
+  const totalSales = selectedBills.reduce((s,b)=>s+b.total,0);
+  const cashSales = selectedBills.filter(b=>b.mode==='cash').reduce((s,b)=>s+b.total,0);
+  const upiSales = selectedBills.filter(b=>b.mode==='upi').reduce((s,b)=>s+b.total,0);
+  const gstTotal = selectedBills.reduce((s,b)=>s+b.gst,0);
   const totalExpenses = expenses.filter(e=>{
     if(reportView==='daily') return e.date===selectedDate;
     if(reportView==='weekly') return new Date(e.date)>=new Date(Date.now()-7*86400000);
@@ -32,7 +84,7 @@ export default function ReportsTab({ bills, setBills, expenses, saveExpenses, cu
   }).reduce((s,e)=>s+Number(e.amount||0),0);
   const netProfit = totalSales - gstTotal - totalExpenses;
   const topProducts = getTopProducts(selectedBills);
-  const dayWise = getDayWise(reportView==='weekly'?filterByWeek(safeBills):filterByMonth(safeBills));
+  const dayWise = getDayWise(reportView==='weekly'?filterByWeek(normalBills):filterByMonth(normalBills));
   const maxDay = Math.max(...dayWise.map(d=>d.total),1);
 
   return (
