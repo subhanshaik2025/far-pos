@@ -12,11 +12,21 @@
     <link rel="manifest" href="/manifest.json">
     <link rel="apple-touch-icon" href="/logo.png">
     <link rel="icon" href="/logo.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
     <title>FAR POS</title>
     <style>
       * { box-sizing: border-box; margin: 0; padding: 0; }
-      body { font-family: system-ui, sans-serif; background: #0F0F0F; }
+      body { font-family: Inter, system-ui, sans-serif; background: #0F0F0F; }
       #root { min-height: 100vh; }
+      #root * { font-family: Inter, system-ui, sans-serif; }
+      ::selection { background: #C9A84C; color: #000; }
+      ::-webkit-scrollbar { width: 8px; height: 8px; }
+      ::-webkit-scrollbar-track { background: #141414; }
+      ::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
+      ::-webkit-scrollbar-thumb:hover { background: #C9A84C; }
+      input, button, select { font-family: Inter, system-ui, sans-serif; }
     </style>
   </head>
   <body>
