@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { GOLD, GOLD_L, BOR, SURF, TX, DIM, MU, inp, goldBtn, ghostBtn, card, sT } from '../utils/theme';
 import { getSalesFromSheet } from '../salesSheets';
 import { normalizeBill, localDateStr } from '../utils/billUtils';
+import InsightsCard from './InsightsCard';
 
 function getTopProducts(bills) {
   const map = {};
@@ -125,6 +126,8 @@ export default function ReportsTab({ bills, setBills, expenses, saveExpenses, cu
           </div>
         ))}
       </div>
+
+      <InsightsCard bills={normalized} />
 
       {topProducts.length>0&&(
         <div style={{marginBottom:20}}>
