@@ -91,7 +91,7 @@ export default function POSApp() {
   const subtotal=cart.reduce((s,c)=>s+(c.price*c.qty),0);
   const discountAmt=discountType==='percent'?Math.round(subtotal*discount/100):Math.min(discount,subtotal);
   const afterDiscount=subtotal-discountAmt;
-  const gstPct=shopSettings.gstPercent||5;
+  const gstPct=(shopSettings.gstPercent !== undefined && shopSettings.gstPercent !== null) ? shopSettings.gstPercent : 5;
   const {grandTotal,gst}=calculateTotal(afterDiscount,gstPct);
   const lowStock=products.filter(p=>p.stock!==undefined&&p.stock<=5);
   const totalKhataOwed=khata.filter(k=>k.type==='given'&&!k.paid).reduce((s,k)=>s+Number(k.amount),0);
@@ -119,7 +119,7 @@ export default function POSApp() {
 
   const generateGSTInvoice=(bill)=>{
     const items=parseItems(bill);
-    const billGstPct=Number(bill.gstPercent||shopSettings.gstPercent||5);
+    const billGstPct=Number((bill.gstPercent !== undefined && bill.gstPercent !== null) ? bill.gstPercent : ((shopSettings.gstPercent !== undefined && shopSettings.gstPercent !== null) ? shopSettings.gstPercent : 5));
     const cgst=Math.round(Number(bill.gst||0)/2);
     const sgst=cgst;
     const numToWords=(n)=>{
