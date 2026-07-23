@@ -35,7 +35,7 @@ export default function BarcodeScanner({ onScan, onClose }) {
         videoRef.current.srcObject = stream;
         videoRef.current.setAttribute('playsinline', 'true');
         videoRef.current.setAttribute('webkit-playsinline', 'true');
-        await videoRef.current.play();
+        try { await videoRef.current.play(); } catch(playErr) { console.warn("Play blocked, retrying:", playErr); videoRef.current.muted = true; await videoRef.current.play(); }
       }
 
       setStatus('📷 Point at barcode');
