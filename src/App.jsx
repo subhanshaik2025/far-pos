@@ -235,7 +235,7 @@ export default function POSApp() {
 
       <div style={{background:BG,minHeight:'calc(100vh - 115px)',padding:20}}>
 
-        {tab==='billing'&&<BillingTab products={products} cart={cart} setCart={setCart} discount={discount} setDiscount={setDiscount} discountType={discountType} setDiscountType={setDiscountType} subtotal={subtotal} gst={gst} gstPct={gstPct} grandTotal={grandTotal} discountAmt={discountAmt} loadingBill={loadingBill} completeBill={completeBill} showToast={showToast} />}
+        {tab==='billing'&&<BillingTab products={products} cart={cart} setCart={setCart} discount={discount} setDiscount={setDiscount} discountType={discountType} setDiscountType={setDiscountType} subtotal={subtotal} gst={gst} gstPct={gstPct} grandTotal={grandTotal} discountAmt={discountAmt} loadingBill={loadingBill} completeBill={completeBill} showToast={showToast} bills={bills} onOpenScanner={()=>setShowScanner(true)} />}
 
         {tab==='products'&&(
           <div>
