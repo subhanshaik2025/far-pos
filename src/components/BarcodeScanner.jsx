@@ -1,16 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
+import { BrowserMultiFormatReader } from '@zxing/browser';
 import { GOLD, BOR, TX, DIM, MU, ghostBtn } from '../utils/theme';
-
-function loadZXing() {
-  if (window.ZXingBrowser) return Promise.resolve();
-  return new Promise((resolve, reject) => {
-    const s = document.createElement('script');
-    s.src = 'https://cdn.jsdelivr.net/npm/@zxing/browser@0.1.5/umd/index.min.js';
-    s.onload = resolve;
-    s.onerror = () => reject(new Error('Failed to load scanner library. Check internet connection.'));
-    document.head.appendChild(s);
-  });
-}
 
 export default function BarcodeScanner({ onScan, onClose }) {
   const videoRef = useRef(null);
@@ -22,50 +12,32 @@ export default function BarcodeScanner({ onScan, onClose }) {
   const [manualCode, setManualCode] = useState('');
 
   const startCamera = async () => {
-    setStatus('Requesting camera access...');
     try {
-      // STEP 1: Load ZXing FIRST before touching camera
-      setStatus('Loading scanner library...');
-      await loadZXing();
-      if (!window.ZXingBrowser) throw new Error('Scanner library not available');
-
-      // STEP 2: Request camera with iOS-safe constraints
       setStatus('Requesting camera permission...');
-      const constraints = {
-        video: {
-          facingMode: 'environment',
-          width: { ideal: 1280 },
-          height: { ideal: 720 }
-        },
-        audio: false
-      };
 
-      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } },
+        audio: false
+      });
       streamRef.current = stream;
 
-      // STEP 3: Set up video element carefully for iOS
       const video = videoRef.current;
       if (!video) throw new Error('Video element not ready');
 
       video.srcObject = stream;
       video.setAttribute('playsinline', 'true');
       video.setAttribute('webkit-playsinline', 'true');
-      video.setAttribute('autoplay', 'true');
       video.muted = true;
 
-      // STEP 4: Wait for video to be ready
       await new Promise((resolve, reject) => {
         const onReady = () => { video.removeEventListener('loadedmetadata', onReady); resolve(); };
         video.addEventListener('loadedmetadata', onReady);
-        setTimeout(() => reject(new Error('Video loading timed out')), 5000);
+        setTimeout(() => reject(new Error('Video timeout')), 5000);
       });
 
-      // STEP 5: Play the video (this can fail on iOS)
       try {
         await video.play();
       } catch(playErr) {
-        console.warn('Play failed:', playErr);
-        // iOS sometimes needs a second attempt
         video.muted = true;
         await new Promise(r => setTimeout(r, 100));
         await video.play();
@@ -74,8 +46,7 @@ export default function BarcodeScanner({ onScan, onClose }) {
       setStarted(true);
       setStatus('📷 Point at barcode');
 
-      // STEP 6: Start barcode detection using the video element directly
-      const reader = new window.ZXingBrowser.BrowserMultiFormatReader();
+      const reader = new BrowserMultiFormatReader();
       const controls = await reader.decodeFromVideoElement(video, (result) => {
         if (result) {
           const code = result.getText();
@@ -91,21 +62,13 @@ export default function BarcodeScanner({ onScan, onClose }) {
       console.error('Scanner error:', e);
       let msg = '';
       if (e && typeof e === 'object') {
-        if (e.name === 'NotAllowedError' || e.name === 'PermissionDeniedError') {
-          msg = 'Camera permission denied. Go to Settings → Safari → Camera → Allow';
-        } else if (e.name === 'NotFoundError') {
-          msg = 'No camera found';
-        } else if (e.name === 'NotReadableError') {
-          msg = 'Camera busy. Close other camera apps';
-        } else if (e.message) {
-          msg = e.message;
-        } else if (e.name) {
-          msg = e.name;
-        } else if (e.type) {
-          msg = 'Video error: ' + e.type;
-        }
+        if (e.name === 'NotAllowedError') msg = 'Camera denied. Settings → Safari → Camera → Allow';
+        else if (e.name === 'NotFoundError') msg = 'No camera found';
+        else if (e.name === 'NotReadableError') msg = 'Camera busy — close other camera apps';
+        else if (e.message) msg = e.message;
+        else if (e.name) msg = e.name;
       }
-      if (!msg) msg = 'Camera failed. Try manual entry below.';
+      if (!msg) msg = 'Camera failed. Use manual entry below.';
       setStatus('❌ ' + msg);
     }
   };
