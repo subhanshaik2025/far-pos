@@ -70,6 +70,20 @@ export default function POSApp() {
     return ()=>{ window.removeEventListener('online',onOnline); window.removeEventListener('offline',onOffline); };
   },[]);
 
+  
+  const autoAssignSKU = () => {
+    const updated = products.map(p => {
+      if (!p.sku || !p.barcode) {
+        const sku = p.sku || generateSKU(p.name, p.category);
+        const barcode = p.barcode || generateBarcode(sku);
+        return { ...p, sku, barcode };
+      }
+      return p;
+    });
+    saveProducts(updated);
+    showToast('SKU + Barcode assigned to all products!', 'success');
+  };
+
   const saveProducts=async(p,user)=>{ const u=user||currentUser; setProducts(p); localStorage.setItem('pos-products-'+u.id,JSON.stringify(p)); saveProductsToSheet(p,u); };
   const saveKhata=async(k)=>{ setKhata(k); localStorage.setItem('pos-khata-'+currentUser.id,JSON.stringify(k)); saveKhataToSheet(k,currentUser); };
   const saveExpenses=async(e)=>{ setExpenses(e); localStorage.setItem('pos-expenses-'+currentUser.id,JSON.stringify(e)); saveExpensesToSheet(e,currentUser); };
