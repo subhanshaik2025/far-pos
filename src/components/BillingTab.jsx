@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { GOLD, GOLD_L, BOR, SURF, TX, DIM, MU, inp } from '../utils/theme';
 
-export default function BillingTab({ products, cart, setCart, discount, setDiscount, discountType, setDiscountType, subtotal, gst, gstPct, grandTotal, discountAmt, loadingBill, completeBill, showToast }) {
+export default function BillingTab({ products, cart, setCart, discount, setDiscount, discountType, setDiscountType, subtotal, gst, gstPct, grandTotal, discountAmt, loadingBill, completeBill, showToast, bills, onOpenScanner }) {
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('All');
 
