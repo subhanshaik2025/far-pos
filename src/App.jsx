@@ -241,7 +241,11 @@ export default function POSApp() {
           <div>
             <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16}}>
               <p style={{...sT,margin:0}}>Product Manager</p>
-              <button onClick={()=>{setNewProduct({name:'',price:'',stock:'',category:''});setEditProduct(null);setShowAddProduct(true);}} style={goldBtn(false)}>+ Add Product</button>
+              <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+                <button onClick={autoAssignSKU} style={{...ghostBtn,color:GOLD,borderColor:GOLD+"66"}}>🏷️ Auto-Assign SKU</button>
+                <button onClick={()=>setShowBarcodeLabels(true)} style={{...ghostBtn,color:GOLD,borderColor:GOLD+"66"}}>🖨️ Print Labels</button>
+                <button onClick={()=>{setNewProduct({name:"",price:"",stock:"",category:""});setEditProduct(null);setShowAddProduct(true);}} style={goldBtn(false)}>+ Add Product</button>
+              </div>
             </div>
             {showAddProduct&&(
               <div style={{...card,borderColor:GOLD+'44',marginBottom:20}}>
