@@ -12,6 +12,9 @@ import { parseItems } from './utils/billUtils';
 import BillingTab from './components/BillingTab';
 import HistoryTab from './components/HistoryTab';
 import ReportsTab from './components/ReportsTab';
+import CustomersTab from './components/CustomersTab';
+import BarcodeLabels from './components/BarcodeLabels';
+import { generateSKU, generateBarcode } from './utils/barcode';
 
 export default function POSApp() {
   const [isLoggedIn,setIsLoggedIn]=useState(false);
@@ -21,6 +24,7 @@ export default function POSApp() {
   const [bills,setBills]=useState([]);
   const [cart,setCart]=useState([]);
   const [tab,setTab]=useState('billing');
+  const [showBarcodeLabels,setShowBarcodeLabels]=useState(false);
   const [discount,setDiscount]=useState(0);
   const [discountType,setDiscountType]=useState('percent');
   const [loadingBill,setLoadingBill]=useState(false);
@@ -210,7 +214,7 @@ export default function POSApp() {
       </div>
 
       <div style={{background:'#141414',display:'flex',gap:4,padding:'10px 20px 0',borderBottom:'1px solid #222',overflowX:'auto'}}>
-        {['billing','products','inventory','khata','history','reports','settings'].map(f=>(
+        {['billing','products','inventory','khata','customers','history','reports','settings'].map(f=>(
           <button key={f} onClick={()=>setTab(f)} style={tabStyle(tab===f)}>{t(f)||f.charAt(0).toUpperCase()+f.slice(1)}</button>
         ))}
       </div>
@@ -351,6 +355,8 @@ export default function POSApp() {
 
         {tab==='history'&&<HistoryTab bills={bills} setBills={setBills} currentUser={currentUser} userRef={userRef} getSalesFromSheet={getSalesFromSheet} shareOnWhatsApp={shareOnWhatsApp} generateGSTInvoice={generateGSTInvoice} sendDailySummary={sendDailySummary} />}
 
+        {tab==='customers'&&<CustomersTab bills={bills} />}
+
         {tab==='reports'&&<ReportsTab bills={bills} setBills={setBills} expenses={expenses} saveExpenses={saveExpenses} currentUser={currentUser} userRef={userRef} generateId={generateId} showToast={showToast} />}
 
         {tab==='settings'&&(
@@ -407,6 +413,7 @@ export default function POSApp() {
         )}
 
       </div>
-    </div>
+    {showBarcodeLabels && <BarcodeLabels products={products} shopName={currentUser?.shopName||'FAR POS'} onClose={()=>setShowBarcodeLabels(false)} />}
+      </div>
   );
 }
