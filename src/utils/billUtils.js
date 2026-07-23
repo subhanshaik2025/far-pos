@@ -60,6 +60,8 @@ export function sanitizeProducts(arr) {
     price: Number(p.price) || 0,
     stock: (p.stock === undefined || p.stock === null || p.stock === '') ? undefined : (Number(p.stock) || 0),
     category: p.category ? String(p.category) : '',
+    sku: p.sku ? String(p.sku).trim() : '',
+    barcode: p.barcode ? String(p.barcode).trim() : '',
   }));
 }
 
