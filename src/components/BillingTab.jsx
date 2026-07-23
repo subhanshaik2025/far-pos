@@ -63,6 +63,10 @@ export default function BillingTab({ products, cart, setCart, discount, setDisco
       <div>
         <p style={{fontSize:11,letterSpacing:2,color:GOLD,textTransform:'uppercase',margin:'0 0 14px',fontWeight:600}}>Products</p>
 
+        {onOpenScanner && (
+          <button onClick={onOpenScanner} style={{width:'100%',padding:'12px 16px',background:'linear-gradient(135deg,#C9A84C22,#C9A84C11)',border:'1px solid #C9A84C55',color:GOLD,borderRadius:12,fontSize:14,fontWeight:600,cursor:'pointer',marginBottom:10,transition:'all .15s'}}>📷 Scan Barcode</button>
+        )}
+
         <input
           placeholder='🔍  Search products...'
           value={search}

@@ -14,7 +14,8 @@ import HistoryTab from './components/HistoryTab';
 import ReportsTab from './components/ReportsTab';
 import CustomersTab from './components/CustomersTab';
 import BarcodeLabels from './components/BarcodeLabels';
-import { generateSKU, generateBarcode } from './utils/barcode';
+import BarcodeScanner from './components/BarcodeScanner';
+import { generateSKU, generateBarcode, findProductByBarcode } from './utils/barcode';
 
 export default function POSApp() {
   const [isLoggedIn,setIsLoggedIn]=useState(false);
@@ -25,6 +26,7 @@ export default function POSApp() {
   const [cart,setCart]=useState([]);
   const [tab,setTab]=useState('billing');
   const [showBarcodeLabels,setShowBarcodeLabels]=useState(false);
+  const [showScanner,setShowScanner]=useState(false);
   const [discount,setDiscount]=useState(0);
   const [discountType,setDiscountType]=useState('percent');
   const [loadingBill,setLoadingBill]=useState(false);
@@ -75,6 +77,18 @@ export default function POSApp() {
   },[]);
 
   
+  
+  const handleBarcodeScan = (code) => {
+    const prod = findProductByBarcode(products, code);
+    if (!prod) { showToast('❌ Product not found: ' + code, 'error'); return; }
+    if (prod.stock !== undefined && prod.stock <= 0) { showToast('❌ ' + prod.name + ' is out of stock', 'error'); return; }
+    const existing = cart.find(c => c.id === prod.id);
+    if (existing) setCart(cart.map(c => c.id === prod.id ? {...c, qty: c.qty + 1} : c));
+    else setCart([...cart, {...prod, qty: 1}]);
+    showToast('✅ Added: ' + prod.name, 'success');
+    navigator.vibrate && navigator.vibrate(100);
+  };
+
   const autoAssignSKU = () => {
     const updated = products.map(p => {
       if (!p.sku || !p.barcode) {
@@ -355,7 +369,7 @@ export default function POSApp() {
 
         {tab==='history'&&<HistoryTab bills={bills} setBills={setBills} currentUser={currentUser} userRef={userRef} getSalesFromSheet={getSalesFromSheet} shareOnWhatsApp={shareOnWhatsApp} generateGSTInvoice={generateGSTInvoice} sendDailySummary={sendDailySummary} />}
 
-        {tab==='customers'&&<CustomersTab bills={bills} />}
+        {tab==='customers'&&<CustomersTab bills={bills} onOpenScanner={()=>setShowScanner(true)} />}
 
         {tab==='reports'&&<ReportsTab bills={bills} setBills={setBills} expenses={expenses} saveExpenses={saveExpenses} currentUser={currentUser} userRef={userRef} generateId={generateId} showToast={showToast} />}
 
@@ -413,7 +427,9 @@ export default function POSApp() {
         )}
 
       </div>
-    {showBarcodeLabels && <BarcodeLabels products={products} shopName={currentUser?.shopName||'FAR POS'} onClose={()=>setShowBarcodeLabels(false)} />}
+    {showScanner && <BarcodeScanner onScan={(code)=>{handleBarcodeScan(code);setShowScanner(false);}} onClose={()=>setShowScanner(false)} />}
+
+        {showBarcodeLabels && <BarcodeLabels products={products} shopName={currentUser?.shopName||'FAR POS'} onClose={()=>setShowBarcodeLabels(false)} />}
       </div>
   );
 }
