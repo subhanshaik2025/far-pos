@@ -6,50 +6,64 @@ export default function BarcodeScanner({ onScan, onClose }) {
   const videoRef = useRef(null);
   const controlsRef = useRef(null);
   const streamRef = useRef(null);
-  const [status, setStatus] = useState('Tap "Start Camera" to begin');
+  const [status, setStatus] = useState('Tap to start');
+  const [debug, setDebug] = useState('');
   const [lastCode, setLastCode] = useState('');
   const [started, setStarted] = useState(false);
   const [manualCode, setManualCode] = useState('');
 
+  const log = (m) => { console.log('[SCAN]', m); setDebug(d => d + '\n' + m); };
+
   const startCamera = async () => {
     try {
-      setStatus('Starting camera...');
+      log('1. Started');
       setStarted(true);
-
-      await new Promise(r => setTimeout(r, 200));
+      await new Promise(r => setTimeout(r, 300));
 
       const video = videoRef.current;
-      if (!video) { setStatus('❌ Video element missing'); return; }
+      if (!video) { log('❌ NO VIDEO REF'); return; }
+      log('2. Video ref OK');
 
       video.setAttribute('playsinline', 'true');
       video.setAttribute('webkit-playsinline', 'true');
-      video.setAttribute('autoplay', 'true');
       video.setAttribute('muted', 'true');
+      video.setAttribute('autoplay', 'true');
       video.playsInline = true;
       video.muted = true;
       video.autoplay = true;
+      log('3. Attrs set');
 
+      log('4. Requesting camera...');
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } },
+        video: { facingMode: 'environment' },
         audio: false
       });
       streamRef.current = stream;
-      video.srcObject = stream;
+      log('5. Got stream, tracks: ' + stream.getTracks().length);
 
-      await new Promise((resolve, reject) => {
-        const onReady = () => { video.removeEventListener('loadedmetadata', onReady); resolve(); };
-        video.addEventListener('loadedmetadata', onReady);
-        setTimeout(() => reject(new Error('Video timeout')), 6000);
-      });
-
-      try { await video.play(); }
-      catch(pe) {
-        video.muted = true;
-        await new Promise(r => setTimeout(r, 200));
-        await video.play();
+      const track = stream.getVideoTracks()[0];
+      if (track) {
+        log('6. Track: ' + track.label + ' state=' + track.readyState);
       }
 
+      video.srcObject = stream;
+      log('7. srcObject set');
+
+      await new Promise((resolve, reject) => {
+        let done = false;
+        const finish = (ok, why) => { if (done) return; done = true; log('8. ' + why); if (ok) resolve(); else reject(new Error(why)); };
+        video.addEventListener('loadedmetadata', () => finish(true, 'metadata OK'), { once: true });
+        video.addEventListener('canplay', () => finish(true, 'canplay OK'), { once: true });
+        setTimeout(() => finish(false, 'metadata timeout'), 8000);
+      });
+
+      log('9. Video dims: ' + video.videoWidth + 'x' + video.videoHeight);
+
+      try { await video.play(); log('10. play() OK'); }
+      catch(pe) { log('10. play() failed: ' + pe.message); }
+
       setStatus('📷 Point at barcode');
+      log('11. Starting decode...');
 
       const reader = new BrowserMultiFormatReader();
       const controls = await reader.decodeFromVideoElement(video, (result) => {
@@ -62,19 +76,13 @@ export default function BarcodeScanner({ onScan, onClose }) {
         }
       });
       controlsRef.current = controls;
+      log('12. Decoder ready ✅');
 
     } catch(e) {
       console.error('Scanner error:', e);
       setStarted(false);
-      let msg = '';
-      if (e && typeof e === 'object') {
-        if (e.name === 'NotAllowedError') msg = 'Camera denied. Settings → Safari → Camera → Allow';
-        else if (e.name === 'NotFoundError') msg = 'No camera found';
-        else if (e.name === 'NotReadableError') msg = 'Camera busy — close other camera apps';
-        else if (e.message) msg = e.message;
-        else if (e.name) msg = e.name;
-      }
-      if (!msg) msg = 'Camera failed. Use manual entry below.';
+      let msg = e.name || e.message || 'Unknown';
+      log('❌ ERROR: ' + msg);
       setStatus('❌ ' + msg);
     }
   };
@@ -93,7 +101,7 @@ export default function BarcodeScanner({ onScan, onClose }) {
   }, []);
 
   return (
-    <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.95)',zIndex:1000,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:20}}>
+    <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.95)',zIndex:1000,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:20,overflow:'auto'}}>
       <div style={{width:'100%',maxWidth:480,background:'#0F0F0F',border:'1px solid '+BOR,borderRadius:16,padding:16}}>
         <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}}>
           <p style={{fontSize:14,color:GOLD,margin:0,fontWeight:600,letterSpacing:1}}>📷 SCAN BARCODE</p>
@@ -103,7 +111,6 @@ export default function BarcodeScanner({ onScan, onClose }) {
         {!started && (
           <div style={{textAlign:'center',padding:'20px'}}>
             <div style={{fontSize:50,marginBottom:12}}>📷</div>
-            <p style={{fontSize:13,color:TX,marginBottom:16,lineHeight:1.5}}>Tap to start camera. When browser asks, tap <b style={{color:GOLD}}>Allow</b>.</p>
             <button onClick={startCamera} style={{padding:'12px 24px',background:'linear-gradient(135deg,#C9A84C,#E8C97A)',color:'#000',border:'none',borderRadius:12,fontSize:14,fontWeight:700,cursor:'pointer',marginBottom:16}}>▶️ Start Camera</button>
 
             <div style={{borderTop:'1px solid '+BOR,paddingTop:16,marginTop:8}}>
@@ -123,6 +130,10 @@ export default function BarcodeScanner({ onScan, onClose }) {
 
         <p style={{marginTop:12,fontSize:13,color:TX,textAlign:'center'}}>{status}</p>
         {lastCode && <p style={{fontSize:11,color:MU,textAlign:'center',margin:'4px 0 0'}}>Last: {lastCode}</p>}
+
+        {debug && (
+          <pre style={{marginTop:12,fontSize:10,color:'#8FCC8F',background:'#0A0A0A',padding:8,borderRadius:6,maxHeight:150,overflow:'auto',whiteSpace:'pre-wrap',wordBreak:'break-all'}}>{debug}</pre>
+        )}
       </div>
     </div>
   );
