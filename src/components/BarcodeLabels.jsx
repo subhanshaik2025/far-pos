@@ -42,7 +42,7 @@ export default function BarcodeLabels({ products, onClose, shopName }) {
             <div class="shop">${shopName || 'FAR POS'}</div>
             <div class="name">${p.name}</div>
             <svg class="bc" jsbarcode-value="${p.barcode}" jsbarcode-format="EAN13" jsbarcode-width="1.4" jsbarcode-height="40" jsbarcode-fontsize="11" jsbarcode-margin="2"></svg>
-            <div class="price">Rs. ${Number(p.price).toLocaleString()}</div>
+
           </div>
         `;
       }
