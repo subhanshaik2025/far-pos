@@ -50,21 +50,29 @@ export default function BarcodeLabels({ products, onClose, shopName }) {
 
     win.document.write(`<!DOCTYPE html><html><head><title>Barcode Labels</title><style>
       *{box-sizing:border-box;margin:0;padding:0;font-family:Arial,sans-serif;}
-      @page{size:A4;margin:8mm;}
+      @page{size:A4 portrait;margin:15.15mm 7.2mm;}
       body{background:#fff;color:#000;}
-      .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:4mm;}
-      .label{border:1px dashed #999;padding:6mm 3mm;text-align:center;page-break-inside:avoid;min-height:32mm;display:flex;flex-direction:column;justify-content:center;}
-      .shop{font-size:9px;color:#666;margin-bottom:2px;text-transform:uppercase;letter-spacing:1px;}
-      .name{font-size:11px;font-weight:bold;margin-bottom:3px;line-height:1.2;}
-      .bc{width:100%;height:auto;max-height:14mm;}
-      .price{font-size:13px;font-weight:bold;margin-top:3px;}
-      @media print{.label{border-style:dotted;border-color:#ccc;}}
-      .toolbar{background:#f5f5f5;padding:12px;text-align:center;margin-bottom:8mm;}
+      html,body{width:210mm;}
+      .grid{display:grid;grid-template-columns:63.5mm 63.5mm 63.5mm;grid-auto-rows:33.9mm;column-gap:2.5mm;row-gap:0;justify-content:center;}
+      .label{width:63.5mm;height:33.9mm;padding:2mm 3mm;text-align:center;page-break-inside:avoid;display:flex;flex-direction:column;justify-content:space-between;align-items:center;overflow:hidden;}
+      .shop{font-size:7pt;color:#333;text-transform:uppercase;letter-spacing:0.5px;font-weight:600;line-height:1;}
+      .name{font-size:9pt;font-weight:bold;line-height:1.1;max-height:2.2em;overflow:hidden;text-overflow:ellipsis;padding:0 1mm;}
+      .bc{width:100%;height:12mm;max-height:12mm;}
+      .price{font-size:10pt;font-weight:bold;line-height:1;}
+      @media screen{
+        .label{border:1px dashed #ccc;}
+      }
+      @media print{
+        .label{border:none;}
+        body{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+      }
+      .toolbar{background:#f5f5f5;padding:12px;text-align:center;margin-bottom:8mm;position:sticky;top:0;z-index:10;box-shadow:0 2px 8px rgba(0,0,0,0.1);}
       .toolbar button{padding:8px 20px;background:#C9A84C;color:#000;border:none;border-radius:6px;font-weight:bold;cursor:pointer;font-size:14px;}
+      .toolbar .info{font-size:12px;color:#666;margin-left:12px;}
       @media print{.toolbar{display:none;}}
     </style><script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script></head>
     <body>
-      <div class="toolbar"><button onclick="window.print()">🖨️ Print Labels</button></div>
+      <div class="toolbar"><button onclick="window.print()">🖨️ Print Labels</button><span class="info">Optimized for A4 sheet · 24 labels per page (3 × 8 · 63.5mm × 33.9mm)</span></div>
       <div class="grid">${cells}</div>
       <script>window.onload=function(){JsBarcode('.bc').init();}</script>
     </body></html>`);
