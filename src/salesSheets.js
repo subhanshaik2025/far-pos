@@ -14,7 +14,7 @@ export async function getAllVendorData(user) {
 }
 
 export async function saveBillToSheet(bill, user) {
-  return call({ action:'saveBill', vendor_id:user.id, bill_id:bill.id, shop_phone:user.phone, shop_name:user.shop_name, items_json:JSON.stringify(bill.items), subtotal:bill.subtotal, discount:bill.discount||0, gst:bill.gst, gst_percent:bill.gstPercent||5, total:bill.total, payment_mode:bill.mode, date:bill.date, timestamp:bill.timestamp });
+  return call({ action:'saveBill', vendor_id:user.id, bill_id:bill.id, shop_phone:user.phone, shop_name:user.shop_name, items_json:JSON.stringify(bill.items), subtotal:bill.subtotal, discount:bill.discount||0, gst:bill.gst, gst_percent:bill.gstPercent||5, total:bill.total, payment_mode:bill.mode, customer_phone:bill.customerPhone||'', customer_name:bill.customerName||'', date:bill.date, timestamp:bill.timestamp });
 }
 
 export async function getSalesFromSheet(user) {
