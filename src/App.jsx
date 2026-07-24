@@ -436,7 +436,7 @@ export default function POSApp() {
       </div>
     {showScanner && <BarcodeScanner onScan={(code)=>{handleBarcodeScan(code);setShowScanner(false);}} onClose={()=>setShowScanner(false)} />}
 
-        {showBarcodeLabels && <BarcodeLabels products={products} shopName={currentUser?.shopName||'FAR POS'} onClose={()=>setShowBarcodeLabels(false)} />}
+        {showBarcodeLabels && <BarcodeLabels products={products} shopName={shopSettings?.shopName || currentUser?.shopName || currentUser?.shop_name || 'My Shop'} onClose={()=>setShowBarcodeLabels(false)} />}
       </div>
   );
 }
