@@ -26,6 +26,7 @@ export default function POSApp() {
   const [cart,setCart]=useState([]);
   const [tab,setTab]=useState('billing');
   const [showBarcodeLabels,setShowBarcodeLabels]=useState(false);
+  const [lastBillForShare,setLastBillForShare]=useState(null);
   const [showScanner,setShowScanner]=useState(false);
   const [discount,setDiscount]=useState(0);
   const [discountType,setDiscountType]=useState('percent');
@@ -195,7 +196,8 @@ export default function POSApp() {
     if(navigator.onLine){ showToast('Bill saved! Rs.'+bill.total,'success'); }
     else { showToast('No internet — bill saved offline, will auto-sync','error'); }
     flushQueue(u,(r)=>{ if(r.pending>0&&navigator.onLine) showToast(r.pending+' bill(s) will retry sync','error'); });
-    window.open('https://wa.me/?text='+encodeURIComponent(generateBillText(bill)),'_blank');
+    // WhatsApp is now optional — shown as toast action button below
+    setLastBillForShare(bill);
   };
 
   if(appLoading) return (
@@ -212,7 +214,19 @@ export default function POSApp() {
   return (
     <div style={{fontFamily:'sans-serif',background:BG,minHeight:'100vh',color:TX}}>
       {!isOnline&&<div style={{background:'#2A1000',borderBottom:'1px solid #F97316',padding:'8px 20px',fontSize:12,color:'#F97316',textAlign:'center'}}>⚠ No internet — changes will sync when back online</div>}
-      {toast&&<div style={{position:'fixed',top:20,right:20,zIndex:9999,background:toast.type==='success'?'#1A2A1A':'#2A1010',border:'1px solid '+(toast.type==='success'?'#34D399':'#F87171'),borderRadius:10,padding:'12px 20px',fontSize:13,color:toast.type==='success'?'#34D399':'#F87171',boxShadow:'0 4px 20px rgba(0,0,0,0.5)',display:'flex',alignItems:'center',gap:8}}>{toast.type==='success'?'✅':'⚠️'} {toast.msg}</div>}
+      {lastBillForShare&&(
+          <div style={{position:'fixed',bottom:20,left:20,right:20,background:'linear-gradient(135deg,#1A2E1A,#0F1A0F)',border:'1px solid #2A4A2A',borderRadius:14,padding:14,zIndex:999,display:'flex',alignItems:'center',justifyContent:'space-between',gap:12,maxWidth:480,margin:'0 auto',boxShadow:'0 8px 24px rgba(0,0,0,0.4)'}}>
+            <div>
+              <p style={{margin:0,fontSize:13,color:'#34D399',fontWeight:600}}>✅ Bill saved: Rs. {lastBillForShare.total}</p>
+              <p style={{margin:'2px 0 0',fontSize:11,color:'#6B9B6B'}}>Send receipt to customer?</p>
+            </div>
+            <div style={{display:'flex',gap:8}}>
+              <button onClick={()=>{window.open('https://wa.me/?text='+encodeURIComponent(generateBillText(lastBillForShare)),'_blank');setLastBillForShare(null);}} style={{padding:'8px 14px',background:'#25D366',color:'#000',border:'none',borderRadius:8,fontWeight:700,fontSize:12,cursor:'pointer'}}>📱 WhatsApp</button>
+              <button onClick={()=>setLastBillForShare(null)} style={{padding:'8px 12px',background:'#2A2A2A',color:'#888',border:'none',borderRadius:8,fontSize:12,cursor:'pointer'}}>Skip</button>
+            </div>
+          </div>
+        )}
+        {toast&&<div style={{position:'fixed',top:20,right:20,zIndex:9999,background:toast.type==='success'?'#1A2A1A':'#2A1010',border:'1px solid '+(toast.type==='success'?'#34D399':'#F87171'),borderRadius:10,padding:'12px 20px',fontSize:13,color:toast.type==='success'?'#34D399':'#F87171',boxShadow:'0 4px 20px rgba(0,0,0,0.5)',display:'flex',alignItems:'center',gap:8}}>{toast.type==='success'?'✅':'⚠️'} {toast.msg}</div>}
 
       <div style={{background:SURF,borderBottom:'1px solid '+BOR,padding:'14px 20px',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
         <div>
