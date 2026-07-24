@@ -99,7 +99,10 @@ export default function POSApp() {
       return p;
     });
     saveProducts(updated);
-    showToast('SKU + Barcode assigned to all products!', 'success');
+    // Also save to Google Sheets so other devices sync
+    const u = userRef.current || currentUser;
+    if (u) saveProductsToSheet(updated, u);
+    showToast('SKU + Barcode saved to all devices!', 'success');
   };
 
   const saveProducts=async(p,user)=>{ const u=user||currentUser; setProducts(p); localStorage.setItem('pos-products-'+u.id,JSON.stringify(p)); saveProductsToSheet(p,u); };
