@@ -183,11 +183,10 @@ export default function POSApp() {
     window.open('https://wa.me/?text='+encodeURIComponent(msg),'_blank');
   };
 
-  const completeBill=async(mode)=>{
+  const completeBill=async(mode,customer)=>{
     if(cart.length===0){showToast('Cart is empty','error');return;}
     const u=userRef.current||currentUser;
-    const bill={id:generateId('bill'),items:cart,subtotal:Math.round(subtotal),discount:discountAmt,gst:Math.round(gst),total:Math.round(grandTotal),gstPercent:gstPct,mode,date:new Date().toLocaleDateString('en-IN'),timestamp:new Date().toISOString()};
-    // OPTIMISTIC: UI updates instantly, sync happens in background
+    const bill={id:generateId('bill'),items:cart,subtotal:Math.round(subtotal),discount:discountAmt,gst:Math.round(gst),total:Math.round(grandTotal),gstPercent:gstPct,mode,customerPhone:(customer&&customer.phone)||'',customerName:(customer&&customer.name)||'',date:new Date().toLocaleDateString('en-IN'),timestamp:new Date().toISOString()};
     setBills(prev=>[...prev,bill]);
     const updatedProducts=products.map(p=>{ const ci=cart.find(c=>c.id===p.id); if(ci&&p.stock!==undefined) return {...p,stock:Math.max(0,p.stock-ci.qty)}; return p; });
     saveProducts(updatedProducts);
@@ -196,7 +195,6 @@ export default function POSApp() {
     if(navigator.onLine){ showToast('Bill saved! Rs.'+bill.total,'success'); }
     else { showToast('No internet — bill saved offline, will auto-sync','error'); }
     flushQueue(u,(r)=>{ if(r.pending>0&&navigator.onLine) showToast(r.pending+' bill(s) will retry sync','error'); });
-    // WhatsApp is now optional — shown as toast action button below
     setLastBillForShare(bill);
   };
 
