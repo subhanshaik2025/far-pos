@@ -13,37 +13,42 @@ export default function BarcodeScanner({ onScan, onClose }) {
 
   const startCamera = async () => {
     try {
-      setStatus('Requesting camera permission...');
+      setStatus('Starting camera...');
+      setStarted(true);
+
+      await new Promise(r => setTimeout(r, 200));
+
+      const video = videoRef.current;
+      if (!video) { setStatus('❌ Video element missing'); return; }
+
+      video.setAttribute('playsinline', 'true');
+      video.setAttribute('webkit-playsinline', 'true');
+      video.setAttribute('autoplay', 'true');
+      video.setAttribute('muted', 'true');
+      video.playsInline = true;
+      video.muted = true;
+      video.autoplay = true;
 
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } },
         audio: false
       });
       streamRef.current = stream;
-
-      const video = videoRef.current;
-      if (!video) throw new Error('Video element not ready');
-
       video.srcObject = stream;
-      video.setAttribute('playsinline', 'true');
-      video.setAttribute('webkit-playsinline', 'true');
-      video.muted = true;
 
       await new Promise((resolve, reject) => {
         const onReady = () => { video.removeEventListener('loadedmetadata', onReady); resolve(); };
         video.addEventListener('loadedmetadata', onReady);
-        setTimeout(() => reject(new Error('Video timeout')), 5000);
+        setTimeout(() => reject(new Error('Video timeout')), 6000);
       });
 
-      try {
-        await video.play();
-      } catch(playErr) {
+      try { await video.play(); }
+      catch(pe) {
         video.muted = true;
-        await new Promise(r => setTimeout(r, 100));
+        await new Promise(r => setTimeout(r, 200));
         await video.play();
       }
 
-      setStarted(true);
       setStatus('📷 Point at barcode');
 
       const reader = new BrowserMultiFormatReader();
@@ -60,6 +65,7 @@ export default function BarcodeScanner({ onScan, onClose }) {
 
     } catch(e) {
       console.error('Scanner error:', e);
+      setStarted(false);
       let msg = '';
       if (e && typeof e === 'object') {
         if (e.name === 'NotAllowedError') msg = 'Camera denied. Settings → Safari → Camera → Allow';
@@ -110,15 +116,10 @@ export default function BarcodeScanner({ onScan, onClose }) {
           </div>
         )}
 
-        {started && (
-          <div style={{position:'relative',background:'#000',borderRadius:12,overflow:'hidden',aspectRatio:'4/3'}}>
-            <video ref={videoRef} style={{width:'100%',height:'100%',objectFit:'cover'}} muted playsInline autoPlay></video>
-            <div style={{position:'absolute',top:'50%',left:'10%',right:'10%',height:2,background:GOLD,boxShadow:'0 0 12px '+GOLD,pointerEvents:'none'}}></div>
-          </div>
-        )}
-        {!started && (
-          <video ref={videoRef} style={{display:'none'}} muted playsInline autoPlay></video>
-        )}
+        <div style={{display:started?'block':'none',position:'relative',background:'#000',borderRadius:12,overflow:'hidden',aspectRatio:'4/3'}}>
+          <video ref={videoRef} playsInline muted autoPlay webkit-playsinline='true' style={{width:'100%',height:'100%',objectFit:'cover',display:'block',background:'#000'}}></video>
+          <div style={{position:'absolute',top:'50%',left:'10%',right:'10%',height:2,background:GOLD,boxShadow:'0 0 12px '+GOLD,pointerEvents:'none'}}></div>
+        </div>
 
         <p style={{marginTop:12,fontSize:13,color:TX,textAlign:'center'}}>{status}</p>
         {lastCode && <p style={{fontSize:11,color:MU,textAlign:'center',margin:'4px 0 0'}}>Last: {lastCode}</p>}
