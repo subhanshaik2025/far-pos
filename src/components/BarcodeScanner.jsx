@@ -1,88 +1,114 @@
 import { useEffect, useRef, useState } from 'react';
 import { BrowserMultiFormatReader } from '@zxing/browser';
+import { DecodeHintType, BarcodeFormat } from '@zxing/library';
 import { GOLD, BOR, TX, DIM, MU, ghostBtn } from '../utils/theme';
+
+// SPEED OPTIMIZATION: only look for retail barcode formats
+const HINTS = new Map();
+HINTS.set(DecodeHintType.POSSIBLE_FORMATS, [
+  BarcodeFormat.EAN_13,
+  BarcodeFormat.EAN_8,
+  BarcodeFormat.UPC_A,
+  BarcodeFormat.UPC_E,
+  BarcodeFormat.CODE_128,
+  BarcodeFormat.CODE_39,
+]);
+HINTS.set(DecodeHintType.TRY_HARDER, false); // false = faster
+HINTS.set(DecodeHintType.ASSUME_GS1, false);
 
 export default function BarcodeScanner({ onScan, onClose }) {
   const videoRef = useRef(null);
   const controlsRef = useRef(null);
   const streamRef = useRef(null);
+  const scannedRef = useRef(false);
   const [status, setStatus] = useState('Tap to start');
-  const [debug, setDebug] = useState('');
   const [lastCode, setLastCode] = useState('');
   const [started, setStarted] = useState(false);
   const [manualCode, setManualCode] = useState('');
 
-  const log = (m) => { console.log('[SCAN]', m); setDebug(d => d + '\n' + m); };
-
   const startCamera = async () => {
     try {
-      log('1. Started');
+      setStatus('Starting camera...');
       setStarted(true);
-      await new Promise(r => setTimeout(r, 300));
+      await new Promise(r => setTimeout(r, 200));
 
       const video = videoRef.current;
-      if (!video) { log('❌ NO VIDEO REF'); return; }
-      log('2. Video ref OK');
+      if (!video) { setStatus('❌ Video not ready'); return; }
 
       video.setAttribute('playsinline', 'true');
       video.setAttribute('webkit-playsinline', 'true');
-      video.setAttribute('muted', 'true');
       video.setAttribute('autoplay', 'true');
+      video.setAttribute('muted', 'true');
       video.playsInline = true;
       video.muted = true;
       video.autoplay = true;
-      log('3. Attrs set');
 
-      log('4. Requesting camera...');
+      // FAST CAMERA: higher framerate, focus close
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment' },
+        video: {
+          facingMode: 'environment',
+          width: { ideal: 1920 },
+          height: { ideal: 1080 },
+          frameRate: { ideal: 30, min: 15 },
+          focusMode: 'continuous',
+          advanced: [{ focusMode: 'continuous' }]
+        },
         audio: false
       });
       streamRef.current = stream;
-      log('5. Got stream, tracks: ' + stream.getTracks().length);
+      video.srcObject = stream;
 
+      // Try to lock focus mode (Android)
       const track = stream.getVideoTracks()[0];
-      if (track) {
-        log('6. Track: ' + track.label + ' state=' + track.readyState);
+      if (track && track.applyConstraints) {
+        try {
+          const caps = track.getCapabilities ? track.getCapabilities() : {};
+          if (caps.focusMode && caps.focusMode.includes('continuous')) {
+            await track.applyConstraints({ advanced: [{ focusMode: 'continuous' }] });
+          }
+        } catch(e) {}
       }
 
-      video.srcObject = stream;
-      log('7. srcObject set');
-
       await new Promise((resolve, reject) => {
-        let done = false;
-        const finish = (ok, why) => { if (done) return; done = true; log('8. ' + why); if (ok) resolve(); else reject(new Error(why)); };
-        video.addEventListener('loadedmetadata', () => finish(true, 'metadata OK'), { once: true });
-        video.addEventListener('canplay', () => finish(true, 'canplay OK'), { once: true });
-        setTimeout(() => finish(false, 'metadata timeout'), 8000);
+        const onReady = () => { video.removeEventListener('loadedmetadata', onReady); resolve(); };
+        video.addEventListener('loadedmetadata', onReady);
+        setTimeout(() => reject(new Error('Video timeout')), 6000);
       });
 
-      log('9. Video dims: ' + video.videoWidth + 'x' + video.videoHeight);
-
-      try { await video.play(); log('10. play() OK'); }
-      catch(pe) { log('10. play() failed: ' + pe.message); }
+      try { await video.play(); }
+      catch(pe) { video.muted = true; await new Promise(r => setTimeout(r, 100)); await video.play(); }
 
       setStatus('📷 Point at barcode');
-      log('11. Starting decode...');
 
-      const reader = new BrowserMultiFormatReader();
-      const controls = await reader.decodeFromVideoElement(video, (result) => {
-        if (result) {
+      // FAST DECODER: with restricted format hints
+      const reader = new BrowserMultiFormatReader(HINTS, 100); // 100ms between scans (fast)
+
+      const controls = await reader.decodeFromVideoElement(video, (result, err) => {
+        if (result && !scannedRef.current) {
+          scannedRef.current = true;
           const code = result.getText();
           setLastCode(code);
           setStatus('✅ Scanned: ' + code);
-          if (navigator.vibrate) navigator.vibrate(150);
+          if (navigator.vibrate) navigator.vibrate(80);
           onScan(code);
+          // Allow next scan after 500ms
+          setTimeout(() => { scannedRef.current = false; }, 500);
         }
       });
       controlsRef.current = controls;
-      log('12. Decoder ready ✅');
 
     } catch(e) {
       console.error('Scanner error:', e);
       setStarted(false);
-      let msg = e.name || e.message || 'Unknown';
-      log('❌ ERROR: ' + msg);
+      let msg = '';
+      if (e && typeof e === 'object') {
+        if (e.name === 'NotAllowedError') msg = 'Camera denied. Settings → Safari → Camera → Allow';
+        else if (e.name === 'NotFoundError') msg = 'No camera found';
+        else if (e.name === 'NotReadableError') msg = 'Camera busy';
+        else if (e.message) msg = e.message;
+        else if (e.name) msg = e.name;
+      }
+      if (!msg) msg = 'Camera failed. Use manual entry.';
       setStatus('❌ ' + msg);
     }
   };
@@ -111,12 +137,13 @@ export default function BarcodeScanner({ onScan, onClose }) {
         {!started && (
           <div style={{textAlign:'center',padding:'20px'}}>
             <div style={{fontSize:50,marginBottom:12}}>📷</div>
+            <p style={{fontSize:13,color:TX,marginBottom:16,lineHeight:1.5}}>Tap to start camera</p>
             <button onClick={startCamera} style={{padding:'12px 24px',background:'linear-gradient(135deg,#C9A84C,#E8C97A)',color:'#000',border:'none',borderRadius:12,fontSize:14,fontWeight:700,cursor:'pointer',marginBottom:16}}>▶️ Start Camera</button>
 
             <div style={{borderTop:'1px solid '+BOR,paddingTop:16,marginTop:8}}>
-              <p style={{fontSize:11,color:MU,margin:'0 0 8px',letterSpacing:1,textTransform:'uppercase'}}>Or enter barcode manually</p>
+              <p style={{fontSize:11,color:MU,margin:'0 0 8px',letterSpacing:1,textTransform:'uppercase'}}>Or enter manually</p>
               <div style={{display:'flex',gap:6}}>
-                <input value={manualCode} onChange={e=>setManualCode(e.target.value)} placeholder='Type barcode number' style={{flex:1,padding:'10px 12px',background:'#141414',border:'1px solid '+BOR,color:TX,borderRadius:8,fontSize:13}} />
+                <input value={manualCode} onChange={e=>setManualCode(e.target.value)} placeholder='Type barcode' style={{flex:1,padding:'10px 12px',background:'#141414',border:'1px solid '+BOR,color:TX,borderRadius:8,fontSize:13}} />
                 <button onClick={submitManual} disabled={!manualCode.trim()} style={{padding:'10px 16px',background:GOLD,color:'#000',border:'none',borderRadius:8,fontWeight:700,cursor:'pointer',opacity:manualCode.trim()?1:0.4}}>Add</button>
               </div>
             </div>
@@ -125,15 +152,15 @@ export default function BarcodeScanner({ onScan, onClose }) {
 
         <div style={{display:started?'block':'none',position:'relative',background:'#000',borderRadius:12,overflow:'hidden',aspectRatio:'4/3'}}>
           <video ref={videoRef} playsInline muted autoPlay webkit-playsinline='true' style={{width:'100%',height:'100%',objectFit:'cover',display:'block',background:'#000'}}></video>
-          <div style={{position:'absolute',top:'50%',left:'10%',right:'10%',height:2,background:GOLD,boxShadow:'0 0 12px '+GOLD,pointerEvents:'none'}}></div>
+          {/* Bright scan zone with corners for aiming */}
+          <div style={{position:'absolute',top:'25%',bottom:'25%',left:'8%',right:'8%',border:'2px solid '+GOLD,borderRadius:8,boxShadow:'0 0 20px '+GOLD+'88, inset 0 0 20px rgba(0,0,0,0.4)',pointerEvents:'none'}}></div>
+          <div style={{position:'absolute',top:'50%',left:'10%',right:'10%',height:1,background:GOLD,boxShadow:'0 0 8px '+GOLD,pointerEvents:'none',animation:'fpScanLine 1.2s ease-in-out infinite alternate'}}></div>
+          <style>{'@keyframes fpScanLine { from { top: 27% } to { top: 73% } }'}</style>
         </div>
 
         <p style={{marginTop:12,fontSize:13,color:TX,textAlign:'center'}}>{status}</p>
         {lastCode && <p style={{fontSize:11,color:MU,textAlign:'center',margin:'4px 0 0'}}>Last: {lastCode}</p>}
-
-        {debug && (
-          <pre style={{marginTop:12,fontSize:10,color:'#8FCC8F',background:'#0A0A0A',padding:8,borderRadius:6,maxHeight:150,overflow:'auto',whiteSpace:'pre-wrap',wordBreak:'break-all'}}>{debug}</pre>
-        )}
+        {started && <p style={{fontSize:11,color:DIM,textAlign:'center',margin:'8px 0 0'}}>Hold steady, fill the gold box with the barcode</p>}
       </div>
     </div>
   );
