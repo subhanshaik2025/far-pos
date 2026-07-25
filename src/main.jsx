@@ -62,5 +62,5 @@ if ('serviceWorker' in navigator) {
       setInterval(() => reg.update(), 5 * 60 * 1000);
 
     }).catch(e => console.log('SW error', e));
-  });
+  }
 }
