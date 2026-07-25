@@ -32,9 +32,35 @@ ReactDOM.createRoot(document.getElementById('root')).render(
 )
 
 if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js')
-      .then(r => console.log('SW registered'))
-      .catch(e => console.log('SW error', e));
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js').then(reg => {
+      console.log('SW registered');
+
+      // Auto-update: when new SW is waiting, activate it immediately
+      reg.addEventListener('updatefound', () => {
+        const newWorker = reg.installing;
+        if (!newWorker) return;
+        newWorker.addEventListener('statechange', () => {
+          if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+            // New version available — tell SW to skip waiting
+            newWorker.postMessage({ type: 'SKIP_WAITING' });
+          }
+        });
+      });
+
+      // When SW has taken control, reload to get fresh version
+      let refreshing = false;
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (!refreshing) {
+          refreshing = true;
+          console.log('New version available — reloading...');
+          window.location.reload();
+        }
+      });
+
+      // Check for updates every 5 minutes (while app is open)
+      setInterval(() => reg.update(), 5 * 60 * 1000);
+
+    }).catch(e => console.log('SW error', e));
   });
 }
