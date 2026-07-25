@@ -50,15 +50,54 @@ export default function BarcodeLabels({ products, onClose, shopName }) {
 
     win.document.write(`<!DOCTYPE html><html><head><title>Barcode Labels</title><style>
       *{box-sizing:border-box;margin:0;padding:0;font-family:Arial,sans-serif;}
-      @page{size:A4 portrait;margin:15.15mm 7.2mm;}
+      @page{size:A4 portrait;margin:10mm 5mm;}
       body{background:#fff;color:#000;}
       html,body{width:210mm;}
-      .grid{display:grid;grid-template-columns:63.5mm 63.5mm 63.5mm;grid-auto-rows:33.9mm;column-gap:2.5mm;row-gap:0;justify-content:center;}
-      .label{width:63.5mm;height:33.9mm;padding:2mm 3mm;text-align:center;page-break-inside:avoid;display:flex;flex-direction:column;justify-content:space-between;align-items:center;overflow:hidden;}
-      .shop{font-size:7pt;color:#333;text-transform:uppercase;letter-spacing:0.5px;font-weight:600;line-height:1;}
-      .name{font-size:9pt;font-weight:bold;line-height:1.1;max-height:2.2em;overflow:hidden;text-overflow:ellipsis;padding:0 1mm;}
-      .bc{width:100%;height:12mm;max-height:12mm;}
-      .price{font-size:10pt;font-weight:bold;line-height:1;}
+      /* Oddy ST-12 A4: 2 cols x 6 rows = 12 labels, 100.01mm x 44.15mm each */
+      .grid{
+        display:grid;
+        grid-template-columns:100.01mm 100.01mm;
+        grid-auto-rows:44.15mm;
+        column-gap:0mm;
+        row-gap:0mm;
+        justify-content:center;
+      }
+      .label{
+        width:100.01mm;
+        height:44.15mm;
+        padding:3mm 4mm;
+        text-align:center;
+        page-break-inside:avoid;
+        display:flex;
+        flex-direction:column;
+        justify-content:space-evenly;
+        align-items:center;
+        overflow:hidden;
+        border:0.5px dashed #ddd;
+      }
+      .shop{
+        font-size:8pt;
+        color:#333;
+        text-transform:uppercase;
+        letter-spacing:1px;
+        font-weight:700;
+        line-height:1;
+      }
+      .name{
+        font-size:11pt;
+        font-weight:bold;
+        line-height:1.2;
+        overflow:hidden;
+        text-overflow:ellipsis;
+        white-space:nowrap;
+        width:100%;
+        padding:0 2mm;
+      }
+      .bc{
+        width:85%;
+        height:16mm;
+        max-height:16mm;
+      }
       @media screen{
         .label{border:1px dashed #ccc;}
       }
@@ -66,13 +105,35 @@ export default function BarcodeLabels({ products, onClose, shopName }) {
         .label{border:none;}
         body{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
       }
-      .toolbar{background:#f5f5f5;padding:12px;text-align:center;margin-bottom:8mm;position:sticky;top:0;z-index:10;box-shadow:0 2px 8px rgba(0,0,0,0.1);}
-      .toolbar button{padding:8px 20px;background:#C9A84C;color:#000;border:none;border-radius:6px;font-weight:bold;cursor:pointer;font-size:14px;}
-      .toolbar .info{font-size:12px;color:#666;margin-left:12px;}
+      .toolbar{
+        background:#f5f5f5;
+        padding:12px;
+        text-align:center;
+        margin-bottom:8mm;
+        position:sticky;
+        top:0;
+        z-index:10;
+        box-shadow:0 2px 8px rgba(0,0,0,0.1);
+      }
+      .toolbar button{
+        padding:8px 20px;
+        background:#C9A84C;
+        color:#000;
+        border:none;
+        border-radius:6px;
+        font-weight:bold;
+        cursor:pointer;
+        font-size:14px;
+      }
+      .toolbar .info{
+        font-size:12px;
+        color:#666;
+        margin-left:12px;
+      }
       @media print{.toolbar{display:none;}}
     </style><script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script></head>
     <body>
-      <div class="toolbar"><button onclick="window.print()">🖨️ Print Labels</button><span class="info">Optimized for A4 sheet · 24 labels per page (3 × 8 · 63.5mm × 33.9mm)</span></div>
+      <div class="toolbar"><button onclick="window.print()">🖨️ Print Labels</button><span class="info">Oddy ST-12 A4 · 12 labels per page (2 × 6 · 100mm × 44mm)</span></div>
       <div class="grid">${cells}</div>
       <script>window.onload=function(){JsBarcode('.bc').init();}</script>
     </body></html>`);
@@ -87,7 +148,7 @@ export default function BarcodeLabels({ products, onClose, shopName }) {
           <button onClick={onClose} style={{...ghostBtn,padding:'6px 12px'}}>✕ Close</button>
         </div>
 
-        <p style={{fontSize:12,color:MU,marginBottom:12}}>Buy <b style={{color:GOLD}}>A4 label sticker sheets</b> from Amazon (~₹300/100 sheets). Print, peel, and stick on your products.</p>
+        <p style={{fontSize:12,color:MU,marginBottom:12}}>Buy <b style={{color:GOLD}}>Oddy ST-12 A4 label sticker sheets (2×6, 12 per page)</b> from Amazon (~₹300/100 sheets). Print, peel, and stick on your products.</p>
 
         <div style={{display:'flex',gap:8,marginBottom:12}}>
           <button onClick={()=>toggleAll(true)} style={ghostBtn}>Select All</button>
