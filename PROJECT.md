@@ -51,3 +51,23 @@ Loading states, Toast notifications, Offline detection, Error boundary, Google S
 - 9346465566 / 1234 (Dariya, Restaurant)
 - 8125584558 / 1234 (Appa, cloth)
 - Admin: 9533360607 / admin@far123
+## DEPLOY WORKFLOW (MANDATORY)
+Never use npm run build alone. Always:
+  npm run ship && git add . && git commit -m "msg" && git push
+ship = guard + build. Guard checks 70 shipped features are still present.
+If guard fails, a feature was silently dropped. Fix it, do NOT weaken the guard.
+
+## ROLLBACK
+  git revert HEAD --no-edit && git push
+Vercel restores previous working version in ~60s.
+
+## ADDING FEATURES
+1. Work on a branch: git checkout -b feature/name
+2. Vercel builds a preview URL - vendors never see it
+3. Add a guard check for the new feature in scripts/guard.cjs SAME session
+4. Merge to main only after testing the preview
+
+## LIVE VENDORS - be careful
+Arhuu (Harshad, clothes) and others are in production.
+Regex patches can silently miss and drop features - the guard exists because
+CustomersTab, onOpenScanner and the BillingTab signature all vanished this way.
