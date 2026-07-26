@@ -289,7 +289,7 @@ export default function AdminApp() {
                     </div>
                     <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
                       <button onClick={()=>{setSelectedVendor(v);loadVendorSales(v);}} style={ghBtn}>📊 Details</button>
-                      <button onClick={()=>{setWhatsappVendor(v);setWhatsappMsg('Dear '+gn(v)+', message from FAR POS team about shop '+gs(v)+'. Regards, FAR POS Team');}} style={{...ghBtn,color:'#34D399',borderColor:'#2A4A2A'}}>📱 WhatsApp</button>
+                      <button onClick={()=>{setWhatsappVendor(v);setWhatsappMsg('Dear '+gn(v)+', message from FAR POS team. Regards, FAR POS Team');}} style={{...ghBtn,color:'#34D399',borderColor:'#2A4A2A'}}>📱 WhatsApp</button>
                       <button onClick={()=>updateStatus(gp(v),isActive?'blocked':'active')} style={{...ghBtn,color:isActive?'#F87171':'#34D399',borderColor:isActive?'#4A2020':'#1A4A1A'}}>{isActive?'🚫 Block':'✅ Activate'}</button>
                     </div>
                   </div>
@@ -316,12 +316,7 @@ export default function AdminApp() {
                         <p style={{fontSize:12,color:MU,margin:0}}>🏭 {gi(selectedVendor)} · 📋 {gpl(selectedVendor)} plan · {isReg(gp(selectedVendor))?'✅ Registered':'❌ Not Registered'}</p>
                       </div>
                       <div style={{display:'flex',gap:6}}>
-                        <button onClick={()=>{setWhatsappVendor(selectedVendor);setWhatsappMsg('Dear '+gn(selectedVendor)+',
-
-This is a message from FAR POS team regarding your shop '+shopName+'.
-
-Regards,
-FAR POS Team');}} style={{...ghBtn,color:'#34D399',borderColor:'#2A4A2A'}}>📱 WhatsApp</button>
+                        <button onClick={()=>{setWhatsappVendor(selectedVendor);setWhatsappMsg('Dear '+gn(selectedVendor)+', message from FAR POS team. Regards, FAR POS Team');}} style={{...ghBtn,color:'#34D399',borderColor:'#2A4A2A'}}>📱 WhatsApp</button>
                         <button onClick={()=>updateStatus(gp(selectedVendor),gst(selectedVendor).toLowerCase()==='active'?'blocked':'active')} style={{...ghBtn,color:gst(selectedVendor).toLowerCase()==='active'?'#F87171':'#34D399'}}>{gst(selectedVendor).toLowerCase()==='active'?'🚫 Block':'✅ Activate'}</button>
                       </div>
                     </div>
