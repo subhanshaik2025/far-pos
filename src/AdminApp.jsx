@@ -289,12 +289,7 @@ export default function AdminApp() {
                     </div>
                     <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
                       <button onClick={()=>{setSelectedVendor(v);loadVendorSales(v);}} style={ghBtn}>📊 Details</button>
-                      <button onClick={()=>{setWhatsappVendor(v);setWhatsappMsg('Dear '+gn(v)+',
-
-This is a message from FAR POS team regarding your shop '+gs(v)+'.
-
-Regards,
-FAR POS Team');}} style={{...ghBtn,color:'#34D399',borderColor:'#2A4A2A'}}>📱 WhatsApp</button>
+                      <button onClick={()=>{setWhatsappVendor(v);setWhatsappMsg('Dear '+gn(v)+', message from FAR POS team about shop '+gs(v)+'. Regards, FAR POS Team');}} style={{...ghBtn,color:'#34D399',borderColor:'#2A4A2A'}}>📱 WhatsApp</button>
                       <button onClick={()=>updateStatus(gp(v),isActive?'blocked':'active')} style={{...ghBtn,color:isActive?'#F87171':'#34D399',borderColor:isActive?'#4A2020':'#1A4A1A'}}>{isActive?'🚫 Block':'✅ Activate'}</button>
                     </div>
                   </div>
