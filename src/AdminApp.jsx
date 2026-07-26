@@ -40,22 +40,56 @@ export default function AdminApp() {
     try {
       const res=await fetch(USERS_URL+'?action=getAdminData');
       const data=await res.json();
-      if(data.success){ setVendors(data.allowed||[]); setRegistered(data.registered||[]); }
+      if(data.success){ const al=data.allowed||[]; const rg=data.registered||[]; setVendors(al); setRegistered(rg); setTimeout(()=>loadAllSalesWith(al,rg),0); }
     } catch(e){ console.error(e); }
     setDataLoading(false);
   };
 
   const loadVendorSales=async(v)=>{
-    const shopName=gs(v);
+    const key=vkey(v);
+    if(allSales[key]) return;
     const vendorId=gid(v);
-    if(allSales[shopName]) return;
-    setVendorSalesLoading(true);
+    const shopName=salesShop(v);
+    if(!vendorId){ setAllSales(prev=>({...prev,[key]:[]})); return; }
     try {
       const res=await fetch(SALES_URL+'?action=getSales&vendor_id='+encodeURIComponent(vendorId)+'&shop_name='+encodeURIComponent(shopName));
       const data=await res.json();
-      if(data.success) setAllSales(prev=>({...prev,[shopName]:data.sales||[]}));
-    } catch(e){ console.error(e); }
-    setVendorSalesLoading(false);
+      setAllSales(prev=>({...prev,[key]:(data&&data.success&&data.sales)?data.sales:[]}));
+    } catch(e){ setAllSales(prev=>({...prev,[key]:[]})); }
+  };
+
+  const loadAllSales=async(vendorList)=>{
+    setDataLoading(true);
+    const next={};
+    for(const v of vendorList){
+      const key=vkey(v);
+      const vendorId=gid(v);
+      const shopName=salesShop(v);
+      if(!vendorId){ next[key]=[]; continue; }
+      try {
+        const res=await fetch(SALES_URL+'?action=getSales&vendor_id='+encodeURIComponent(vendorId)+'&shop_name='+encodeURIComponent(shopName));
+        const data=await res.json();
+        next[key]=(data&&data.success&&data.sales)?data.sales:[];
+      } catch(e){ next[key]=[]; }
+    }
+    setAllSales(next);
+    setDataLoading(false);
+  };
+
+  const loadAllSalesWith=async(vendorList,regList)=>{
+    const np=(p)=>String(p||'').replace(/[^0-9]/g,'');
+    const next={};
+    for(const v of vendorList){
+      const ph=np(v['Phone Number']||v.phone);
+      const reg=regList.find(r=>np(r.phone||r['Phone'])===ph);
+      if(!reg||!reg.id){ next[ph]=[]; continue; }
+      try {
+        const res=await fetch(SALES_URL+'?action=getSales&vendor_id='+encodeURIComponent(reg.id)+'&shop_name='+encodeURIComponent(reg.shop_name||''));
+        const data=await res.json();
+        next[ph]=(data&&data.success&&data.sales)?data.sales:[];
+      } catch(e){ next[ph]=[]; }
+    }
+    setAllSales(next);
   };
 
   const handleLogin=async()=>{
@@ -92,8 +126,8 @@ export default function AdminApp() {
     const confirmed=window.confirm('Remove bill '+billId+' from '+gs(vendor)+'? This cannot be undone.');
     if(!confirmed) return;
     const shopName=gs(vendor);
-    const updated=(allSales[shopName]||[]).filter(b=>(b.bill_id||b.id)!==billId);
-    setAllSales(prev=>({...prev,[shopName]:updated}));
+    const updated=(allSales[vkey(vendor)]||[]).filter(b=>(b.bill_id||b.id)!==billId);
+    setAllSales(prev=>({...prev,[vkey(vendor)]:updated}));
     showToast('🗑️ Bill removed from view. Note: manually delete from Google Sheets to permanently remove.');
   };
 
@@ -111,11 +145,15 @@ export default function AdminApp() {
   const gi=(v)=>v['Industry Type']||v.industryType||'';
   const gpl=(v)=>v['Plan']||v.plan||'starter';
   const gst=(v)=>v['Status']||v.status||'active';
-  const gid=(v)=>v['Vendor ID']||v.vendorId||v.id||'';
+  const normPhone=(p)=>String(p||'').replace(/[^0-9]/g,'');
+  const getReg=(v)=>registered.find(r=>normPhone(r.phone||r['Phone'])===normPhone(gp(v)))||null;
+  const gid=(v)=>{ const r=getReg(v); return r?String(r.id||''):''; };
+  const salesShop=(v)=>{ const r=getReg(v); return r?String(r.shop_name||gs(v)):gs(v); };
+  const vkey=(v)=>normPhone(gp(v));
   const isReg=(ph)=>registered.some(r=>String(r['Phone']||r.phone||'')===String(ph));
 
   const getVendorRevenue=(v)=>{
-    const sales=allSales[gs(v)]||[];
+    const sales=allSales[vkey(v)]||[];
     return sales.reduce((s,b)=>s+Number(b.total||0),0);
   };
 
@@ -133,11 +171,11 @@ export default function AdminApp() {
   });
 
   // Overall stats
-  const totalRevenue=vendors.reduce((s,v)=>s+(allSales[gs(v)]||[]).reduce((ss,b)=>ss+Number(b.total||0),0),0);
-  const totalBills=vendors.reduce((s,v)=>s+(allSales[gs(v)]||[]).length,0);
+  const totalRevenue=vendors.reduce((s,v)=>s+(allSales[vkey(v)]||[]).reduce((ss,b)=>ss+Number(b.total||0),0),0);
+  const totalBills=vendors.reduce((s,v)=>s+(allSales[vkey(v)]||[]).length,0);
   const activeVendors=vendors.filter(v=>gst(v).toLowerCase()==='active').length;
-  const totalCash=vendors.reduce((s,v)=>s+(allSales[gs(v)]||[]).filter(b=>(b.payment_mode||b.mode||'').toLowerCase()==='cash').reduce((ss,b)=>ss+Number(b.total||0),0),0);
-  const totalUPI=vendors.reduce((s,v)=>s+(allSales[gs(v)]||[]).filter(b=>(b.payment_mode||b.mode||'').toLowerCase()==='upi').reduce((ss,b)=>ss+Number(b.total||0),0),0);
+  const totalCash=vendors.reduce((s,v)=>s+(allSales[vkey(v)]||[]).filter(b=>(b.payment_mode||b.mode||'').toLowerCase()==='cash').reduce((ss,b)=>ss+Number(b.total||0),0),0);
+  const totalUPI=vendors.reduce((s,v)=>s+(allSales[vkey(v)]||[]).filter(b=>(b.payment_mode||b.mode||'').toLowerCase()==='upi').reduce((ss,b)=>ss+Number(b.total||0),0),0);
 
   if(!isLoggedIn) return (
     <div style={{minHeight:'100vh',background:BG,display:'flex',alignItems:'center',justifyContent:'center',padding:20}}>
@@ -222,7 +260,7 @@ export default function AdminApp() {
             <p style={{fontSize:11,letterSpacing:2,color:GOLD,textTransform:'uppercase',margin:'0 0 12px',fontWeight:600}}>Top Vendors by Revenue</p>
             {sortedVendors.slice(0,5).map((v,i)=>{
               const rev=getVendorRevenue(v);
-              const bills=(allSales[gs(v)]||[]).length;
+              const bills=(allSales[vkey(v)]||[]).length;
               return (
                 <div key={gp(v)} style={{...card,display:'flex',alignItems:'center',gap:14,cursor:'pointer',borderColor:i===0?GOLD+'44':BOR}} onClick={()=>{setSelectedVendor(v);setTab('vendors');loadVendorSales(v);}}>
                   <span style={{fontSize:18,fontWeight:700,color:GOLD,minWidth:28}}>#{i+1}</span>
@@ -273,7 +311,7 @@ export default function AdminApp() {
             {/* Vendor List */}
             {!selectedVendor&&filteredVendors.map((v,i)=>{
               const rev=getVendorRevenue(v);
-              const bills=(allSales[gs(v)]||[]).length;
+              const bills=(allSales[vkey(v)]||[]).length;
               const isActive=gst(v).toLowerCase()==='active';
               return (
                 <div key={gp(v)} style={{...card,borderColor:i===0&&!searchQ?GOLD+'33':BOR}}>
@@ -300,7 +338,7 @@ export default function AdminApp() {
             {/* Vendor Detail */}
             {selectedVendor&&(()=>{
               const shopName=gs(selectedVendor);
-              const sales=allSales[shopName]||[];
+              const sales=allSales[vkey(selectedVendor)]||[];
               const totalRev=sales.reduce((s,b)=>s+Number(b.total||0),0);
               const cashRev=sales.filter(b=>(b.payment_mode||b.mode||'').toLowerCase()==='cash').reduce((s,b)=>s+Number(b.total||0),0);
               const upiRev=sales.filter(b=>(b.payment_mode||b.mode||'').toLowerCase()==='upi').reduce((s,b)=>s+Number(b.total||0),0);
@@ -368,10 +406,10 @@ export default function AdminApp() {
             {sortedVendors.length===0&&<p style={{color:DIM}}>No data yet — click Refresh to load vendor sales</p>}
             {sortedVendors.map((v,i)=>{
               const rev=getVendorRevenue(v);
-              const bills=(allSales[gs(v)]||[]).length;
+              const bills=(allSales[vkey(v)]||[]).length;
               const maxRev=getVendorRevenue(sortedVendors[0])||1;
               const pct=Math.round(rev/maxRev*100);
-              const cash=(allSales[gs(v)]||[]).filter(b=>(b.payment_mode||b.mode||'').toLowerCase()==='cash').reduce((s,b)=>s+Number(b.total||0),0);
+              const cash=(allSales[vkey(v)]||[]).filter(b=>(b.payment_mode||b.mode||'').toLowerCase()==='cash').reduce((s,b)=>s+Number(b.total||0),0);
               const upi=rev-cash;
               return (
                 <div key={gp(v)} style={{...card}}>
