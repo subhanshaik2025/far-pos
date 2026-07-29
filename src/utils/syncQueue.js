@@ -35,10 +35,10 @@ export async function flushQueue(user, onResult) {
     try {
       const res = await saveBillToSheet(entry.bill, user);
       if (res && res.success) { synced++; }
-      else { entry.attempts = (entry.attempts || 0) + 1; if (entry.attempts < 3) remaining.push(entry); }
+      else { entry.attempts = (entry.attempts || 0) + 1; if (entry.attempts < 10) remaining.push(entry); }
     } catch(e) {
       entry.attempts = (entry.attempts || 0) + 1;
-      if (entry.attempts < 3) remaining.push(entry);
+      if (entry.attempts < 10) remaining.push(entry);
     }
   }
   setQueue(user.id, remaining);
