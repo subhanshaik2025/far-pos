@@ -61,7 +61,7 @@ const CHECKS = [
   ['src/AdminApp.jsx', "whatsappVendor", 'Admin WhatsApp'],
   ['src/AdminApp.jsx', "Revenue by Vendor", 'Admin analytics'],
 
-  ['src/utils/syncQueue.js', 'attempts < 3', 'Retry cap'],
+  ['src/utils/syncQueue.js', 'attempts < 10', 'Retry cap'],
   ['src/salesSheets.js', 'bill.gstPercent !== undefined', 'GST 0% to Sheets'],
   ['src/main.jsx', "controllerchange", 'Auto-update reload'],
   ['public/sw.js', "skipWaiting", 'SW instant activate'],
